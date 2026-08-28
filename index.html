@@ -231,8 +231,9 @@
   .tag-pill.group{ color:var(--blue); border-color:rgba(79,158,242,.25); background:rgba(79,158,242,.08); }
   .card-desc{
     font-size:12.5px; color:var(--text-dim); line-height:1.55; margin-bottom:16px;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-    min-height:38px;
+    display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;
+    white-space:nowrap; text-overflow:ellipsis;
+    min-height:19px;
   }
   .card-foot{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
@@ -349,7 +350,16 @@
   .icon-btn-inline{ background:none; border:none; color:var(--text-faint); padding:4px; border-radius:6px; }
   .icon-btn-inline:hover{ color:var(--text); background:var(--surface); }
   .detail-meta{ display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap;}
-  .detail-desc{ color:var(--text-dim); font-size:13.5px; margin-top:10px; max-width:560px; line-height:1.6;}
+  .detail-desc{
+    color:var(--text-dim); font-size:13.5px; margin-top:10px; max-width:560px; line-height:1.6;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .detail-desc.expanded{ -webkit-line-clamp:unset; overflow:visible; }
+  .detail-desc-more{
+    display:inline-block; margin-top:4px; font-size:12px; font-weight:600; color:var(--red-2);
+    background:none; border:none; padding:0; cursor:pointer;
+  }
+  .detail-desc-more:hover{ text-decoration:underline; }
   .detail-actions{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; }
   .meta-text{ font-size:11.5px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; }
 
@@ -893,6 +903,7 @@ let pendingMultiFiles = null; // [{path, content}] for new app
 let pendingIcon = null;       // dataURL string
 let updateFile = null;
 let updateMultiFiles = null;
+let pendingStIcon = undefined; // undefined = değişmedi, string = yeni dataURL
 let uiFilters = { q:'', category:'', group:'', favOnly:false, showArchived:false };
 let diffSelection = [];
 
@@ -1717,7 +1728,8 @@ function renderDetail(app){
           ${app.category ? `<span class="tag-pill">${escapeHtml(app.category)}</span>` : ''}
           ${app.group ? `<span class="tag-pill group">${escapeHtml(app.group)}</span>` : ''}
         </div>
-        <div class="detail-desc">${escapeHtml(app.description||'Açıklama eklenmemiş.')}</div>
+        <div class="detail-desc" id="detailDesc">${escapeHtml(app.description||'Açıklama eklenmemiş.')}</div>
+        ${app.description && app.description.length > 110 ? `<button class="detail-desc-more" id="detailDescMore">Daha fazla göster</button>` : ''}
         <div class="detail-meta" style="margin-top:10px;">
           <span class="meta-text" id="metaSize">Boyut: hesaplanıyor…</span>
           <span class="meta-text" id="metaCommit">Son commit: hesaplanıyor…</span>
@@ -1881,6 +1893,17 @@ function renderDetail(app){
       <div class="section-card">
         <h3>Uygulama bilgileri</h3>
         <div class="sub">Ad, kategori ve grup bilgilerini güncelle.</div>
+        <div class="field" style="margin-bottom:14px; max-width:160px;">
+          <label>Simge</label>
+          <div class="dropzone dropzone-icon" id="st_icon_dropzone">
+            <input type="file" id="st_icon_file" accept="image/*">
+            <div id="st_icon_content">
+              ${app.icon
+                ? `<img class="icon-preview" src="${app.icon}"><div class="dz-sub">Değiştirmek için tıkla</div>`
+                : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><div class="dz-sub">PNG / SVG / JPG yükle</div>`}
+            </div>
+          </div>
+        </div>
         <div class="field" style="margin-bottom:14px;"><label>Uygulama adı</label><input type="text" id="st_name" value="${escapeHtml(app.name)}"></div>
         <div class="field" style="margin-bottom:14px;"><label>Açıklama</label><textarea id="st_desc" placeholder="Uygulama ne işe yarıyor, kimin için?">${escapeHtml(app.description||'')}</textarea></div>
         <div class="field-row" style="margin-bottom:14px;">
@@ -1933,23 +1956,43 @@ function renderDetail(app){
     finally{ trackSaveBtn.disabled = false; }
   });
 
+  pendingStIcon = undefined;
+  const stIconZone = document.getElementById('st_icon_dropzone');
+  if(stIconZone) setupDropzone('st_icon_dropzone','st_icon_file', async files => {
+    const dataUrl = await resizeImageToDataUrl(files[0]);
+    pendingStIcon = dataUrl;
+    document.getElementById('st_icon_content').innerHTML = `<img class="icon-preview" src="${dataUrl}"><div class="dz-sub">Değiştirmek için tıkla</div>`;
+  });
+
   const metaSaveBtn = document.getElementById('metaSaveBtn');
   if(metaSaveBtn) metaSaveBtn.addEventListener('click', async ()=>{
     const newName = document.getElementById('st_name').value.trim() || app.name;
     const description = document.getElementById('st_desc').value.trim();
     const category = document.getElementById('st_category').value.trim();
     const group = document.getElementById('st_group').value.trim();
+    const newIcon = pendingStIcon;
     metaSaveBtn.disabled = true;
     try{
-      const updated = await patchApp(app.id, a => { a.name = newName; a.description = description; a.category = category; a.group = group; });
+      const updated = await patchApp(app.id, a => {
+        a.name = newName; a.description = description; a.category = category; a.group = group;
+        if(newIcon !== undefined) a.icon = newIcon;
+      });
       if(newName !== app.name) logActivity('rename', newName, `eski ad: ${app.name}`);
       toast('Bilgiler güncellendi.');
+      pendingStIcon = undefined;
       renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
     }catch(err){ toast('Hata: '+err.message,'err'); }
     finally{ metaSaveBtn.disabled = false; }
   });
 
   document.getElementById('backBtn').addEventListener('click', ()=> history.back());
+
+  const detailDescMore = document.getElementById('detailDescMore');
+  if(detailDescMore) detailDescMore.addEventListener('click', ()=>{
+    const desc = document.getElementById('detailDesc');
+    const expanded = desc.classList.toggle('expanded');
+    detailDescMore.textContent = expanded ? 'Daha az göster' : 'Daha fazla göster';
+  });
 
   setupDropzone('up_dropzone','up_file', files => handleSingleFile(files, f => { updateFile = f; showFileChip('up_dropzone','up_dz_content', f.name); }));
   setupDropzone('up_multi_dropzone','up_multi_file', files => handleMultiFiles(files, result => { updateMultiFiles = result; showMultiFilesChip('up_multi_dropzone','up_multi_dz_content', result); }));
