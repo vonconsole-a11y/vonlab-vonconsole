@@ -884,9 +884,9 @@ const LS_SETTINGS = 'vonlab_console_settings';
 const LS_MANIFEST_CACHE = 'vonlab_console_manifest_cache';
 
 let settings = JSON.parse(localStorage.getItem(LS_SETTINGS) || 'null') || {
-  username:'', token:'', mode:'single', hubRepo:'vonhub-console-data', autoScan:false
+  username:'', token:'', mode:'single', hubRepo:'vonhub-console-data', autoScan:true
 };
-if(typeof settings.autoScan !== 'boolean') settings.autoScan = false;
+if(typeof settings.autoScan !== 'boolean') settings.autoScan = true;
 let apps = JSON.parse(localStorage.getItem(LS_MANIFEST_CACHE) || '[]');
 let pendingFile = null;      // {name, content} - single html for new app
 let pendingMultiFiles = null; // [{path, content}] for new app
@@ -1442,7 +1442,7 @@ document.getElementById('na_submit').addEventListener('click', async ()=>{
       files: fileNames,
       analytics: { enabled:false, code:'' },
       createdAt: new Date().toISOString(),
-      versionHistory: [{ version, date: new Date().toISOString(), note:'İlk sürüm', commitSha: lastCommitSha }]
+      versionHistory: [{ version, date: new Date().toISOString(), note:'İlk sürüm', commitSha: lastCommitSha, sourceFileName: isMulti ? pendingMultiFiles.map(f=>f.path).join(', ') : pendingFile.name }]
     }));
     await saveManifest(list);
     logActivity('create', name, `v${version} · ${category||'kategorisiz'}`);
@@ -1882,6 +1882,7 @@ function renderDetail(app){
         <h3>Uygulama bilgileri</h3>
         <div class="sub">Ad, kategori ve grup bilgilerini güncelle.</div>
         <div class="field" style="margin-bottom:14px;"><label>Uygulama adı</label><input type="text" id="st_name" value="${escapeHtml(app.name)}"></div>
+        <div class="field" style="margin-bottom:14px;"><label>Açıklama</label><textarea id="st_desc" placeholder="Uygulama ne işe yarıyor, kimin için?">${escapeHtml(app.description||'')}</textarea></div>
         <div class="field-row" style="margin-bottom:14px;">
           <div class="field"><label>Kategori</label><input type="text" id="st_category" value="${escapeHtml(app.category)}" placeholder="ör. POS, Oyun, Araç"></div>
           <div class="field"><label>Grup</label><input type="text" id="st_group" value="${escapeHtml(app.group)}" placeholder="ör. Panther, SCIURUS"></div>
@@ -1935,11 +1936,12 @@ function renderDetail(app){
   const metaSaveBtn = document.getElementById('metaSaveBtn');
   if(metaSaveBtn) metaSaveBtn.addEventListener('click', async ()=>{
     const newName = document.getElementById('st_name').value.trim() || app.name;
+    const description = document.getElementById('st_desc').value.trim();
     const category = document.getElementById('st_category').value.trim();
     const group = document.getElementById('st_group').value.trim();
     metaSaveBtn.disabled = true;
     try{
-      const updated = await patchApp(app.id, a => { a.name = newName; a.category = category; a.group = group; });
+      const updated = await patchApp(app.id, a => { a.name = newName; a.description = description; a.category = category; a.group = group; });
       if(newName !== app.name) logActivity('rename', newName, `eski ad: ${app.name}`);
       toast('Bilgiler güncellendi.');
       renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
@@ -2118,7 +2120,7 @@ function renderDetail(app){
       const updated = await patchApp(app.id, a => {
         a.version = version;
         a.files = fileNames;
-        a.versionHistory.push({ version, date: new Date().toISOString(), note, commitSha: lastCommitSha });
+        a.versionHistory.push({ version, date: new Date().toISOString(), note, commitSha: lastCommitSha, sourceFileName: isMulti ? updateMultiFiles.map(f=>f.path).join(', ') : updateFile.name });
       });
       logActivity('update', app.name, `v${version}` + (note?' · '+note:''));
       toast(`v${version} yayınlandı.` + (app.published ? ' Canlı sürüm birkaç dakikada güncellenecek.' : ''));
@@ -2154,6 +2156,7 @@ function renderVersionList(app){
       ${v.commitSha ? `<input type="checkbox" data-diff-check value="${v.commitSha}" data-label="v${escapeHtml(v.version)}">` : ''}
       <span class="vtag ${i===0?'current':''}">v${escapeHtml(v.version)}</span>
       <span class="vdate">${new Date(v.date).toLocaleString('tr-TR')}</span>
+      ${v.sourceFileName ? `<span class="meta-text" style="font-family:'JetBrains Mono',monospace;">${escapeHtml(v.sourceFileName)}</span>` : ''}
       ${v.note ? `<div class="vnote">${escapeHtml(v.note)}</div>` : ''}
       <div class="vactions">
         ${v.commitSha ? `<button class="btn btn-sm btn-ghost" data-download="${v.commitSha}" data-version="${escapeHtml(v.version)}">İndir</button>` : ''}
@@ -2383,7 +2386,7 @@ function renderReleases(){
           <div class="rel-icon" style="background:${r.app.icon?'transparent':colorFor(r.app.name)}">${r.app.icon?`<img src="${r.app.icon}">`:initials(r.app.name)}</div>
           <div class="rel-main">
             <div class="rel-name">${escapeHtml(r.app.name)} <span class="card-version">v${escapeHtml(r.v.version)}</span></div>
-            <div class="rel-sub">${new Date(r.v.date).toLocaleString('tr-TR')}</div>
+            <div class="rel-sub">${new Date(r.v.date).toLocaleString('tr-TR')}${r.v.sourceFileName ? ' · ' + escapeHtml(r.v.sourceFileName) : ''}</div>
           </div>
           <div class="rel-note">${escapeHtml(r.v.note||'—')}</div>
           <div class="rel-right">
