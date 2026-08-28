@@ -1,0 +1,2565 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VonHub Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#08080a;
+    --bg-2:#0e0e11;
+    --surface:#141417;
+    --surface-2:#1b1b1f;
+    --surface-3:#212126;
+    --border:#28282e;
+    --border-soft:#1f1f24;
+    --text:#f2f2f4;
+    --text-dim:#9d9da6;
+    --text-faint:#5c5c66;
+    --red:#e8432f;
+    --red-2:#ff6a4d;
+    --red-dim:#7a2c22;
+    --red-glow:rgba(232,67,47,.35);
+    --green:#3ecf7e;
+    --amber:#e8a53f;
+    --blue:#4f9ef2;
+    --radius-lg:20px;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow-card:0 1px 0 rgba(255,255,255,.03) inset, 0 1px 2px rgba(0,0,0,.4);
+    --shadow-pop:0 24px 48px -20px rgba(0,0,0,.65);
+    --container-max:1520px;
+    font-family:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(1100px 560px at 12% -8%, rgba(232,67,47,.09), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(79,158,242,.045), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:-.005em;
+  }
+  ::selection{ background:var(--red-dim); color:#fff; }
+  a{color:inherit;}
+  button{ font-family:inherit; cursor:pointer; }
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  /* ---------- TOPBAR ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; gap:20px;
+    height:64px;
+    padding:0 24px;
+    background:rgba(8,8,10,.88);
+    backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border-soft);
+  }
+  .brand{ display:flex; align-items:center; gap:11px; padding-right:18px; margin-right:2px; border-right:1px solid var(--border-soft); height:32px; }
+  .brand-mark{
+    width:32px; height:32px; border-radius:9px;
+    background:linear-gradient(155deg, var(--red), #a3271a);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08) inset, 0 6px 18px -6px var(--red-glow);
+    position:relative; flex-shrink:0;
+  }
+  .brand-mark svg{ width:17px; height:17px; }
+  .brand-name{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; letter-spacing:.1px; line-height:1.25;}
+  .brand-sub{ font-size:10px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; letter-spacing:.6px; text-transform:uppercase; margin-top:0; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .topbar-search{
+    flex:1; max-width:400px;
+    display:flex; align-items:center; gap:9px;
+    background:var(--surface); border:1px solid var(--border-soft);
+    border-radius:9px; padding:8px 13px;
+    color:var(--text-faint);
+    transition:.15s border-color, .15s background;
+  }
+  .topbar-search:focus-within{ border-color:#3d3d45; background:var(--surface-2); color:var(--text-dim); }
+  .topbar-search input{
+    flex:1; background:none; border:none; outline:none; color:var(--text); font-size:13.5px;
+  }
+  .topbar-search svg{ flex-shrink:0; opacity:.7; }
+  .topbar-search .kbd-hint{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-faint);
+    border:1px solid var(--border); border-radius:5px; padding:2px 5px; flex-shrink:0;
+  }
+  .topbar-right{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .topbar-sep{ width:1px; height:22px; background:var(--border-soft); margin:0 2px; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    border-radius:9px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--text);
+    padding:9px 15px; font-size:13px; font-weight:600;
+    transition:.15s border-color, .15s background, .15s transform;
+    white-space:nowrap;
+  }
+  .btn:hover{ border-color:#3a3a41; background:var(--surface-3); }
+  .btn:active{ transform:scale(.97); }
+  .btn-primary{
+    background:linear-gradient(155deg, var(--red-2), #c23a22);
+    border-color:transparent; color:#fff;
+    box-shadow:0 8px 20px -9px var(--red-glow);
+  }
+  .btn-primary:hover{ filter:brightness(1.08); background:linear-gradient(155deg, var(--red-2), #c23a22);}
+  .btn-icon{ padding:9px; width:36px; height:36px; }
+  .btn-ghost{ background:none; border-color:transparent; color:var(--text-dim); }
+  .btn-ghost:hover{ background:var(--surface); color:var(--text); }
+  .btn-sm{ padding:7px 12px; font-size:12.5px; border-radius:8px; }
+  .btn-danger{ color:#ff8a7a; }
+  .btn-danger:hover{ background:rgba(232,67,47,.1); border-color:var(--red-dim); }
+  .btn[disabled]{ opacity:.5; pointer-events:none; }
+  .st-scan-row:last-child{ border-bottom:none; }
+  .st-scan-row:hover{ background:var(--surface-2); }
+
+  /* ---------- LAYOUT ---------- */
+  .page{ width:100%; max-width:var(--container-max); margin:0 auto; padding:32px 40px 80px; }
+  .page-head{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:28px; gap:16px; flex-wrap:wrap;}
+  .page-title{ font-family:'Space Grotesk',sans-serif; font-size:25px; font-weight:700; letter-spacing:-.2px; }
+  .page-desc{ color:var(--text-dim); font-size:13.5px; margin-top:5px; }
+  .stat-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:24px;}
+  .stat-chip{
+    position:relative; overflow:hidden;
+    background:linear-gradient(160deg, var(--surface), var(--bg-2));
+    border:1px solid var(--border-soft); border-radius:var(--radius);
+    padding:16px 18px; display:flex; align-items:center; gap:13px;
+    box-shadow:var(--shadow-card);
+  }
+  .stat-chip .stat-ico{
+    width:36px; height:36px; border-radius:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface-2); border:1px solid var(--border-soft); color:var(--text-dim);
+  }
+  .stat-chip .stat-ico svg{ width:16px; height:16px; }
+  .stat-chip .n{ font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; line-height:1.1;}
+  .stat-chip .l{ font-size:12px; color:var(--text-faint); margin-top:2px; }
+
+  /* ---------- FILTER BAR ---------- */
+  .filter-bar{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:22px;
+    padding:10px; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px;
+  }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid transparent; background:transparent; color:var(--text-dim);
+    padding:7px 14px; border-radius:9px; font-size:12.5px; font-weight:600;
+    transition:.15s;
+  }
+  .chip:hover{ background:var(--surface-2); color:var(--text); }
+  .chip.active{ border-color:rgba(232,67,47,.35); background:rgba(232,67,47,.14); color:#fff; }
+  select.chip-select{
+    background:transparent; border:1px solid var(--border-soft); color:var(--text-dim);
+    padding:7px 12px; border-radius:9px; font-size:12.5px; font-weight:600; outline:none;
+  }
+  .switch-row{ display:flex; align-items:center; gap:10px; margin-left:auto; padding-left:10px; border-left:1px solid var(--border-soft); }
+  .switch-label{ font-size:12px; color:var(--text-dim); font-weight:600; }
+  .switch{ position:relative; width:36px; height:20px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch .slider{
+    position:absolute; inset:0; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:20px; cursor:pointer; transition:.15s;
+  }
+  .switch .slider::before{
+    content:''; position:absolute; width:14px; height:14px; left:2px; top:2px;
+    background:var(--text-faint); border-radius:50%; transition:.15s;
+  }
+  .switch input:checked + .slider{ background:rgba(232,67,47,.25); border-color:var(--red); }
+  .switch input:checked + .slider::before{ transform:translateX(16px); background:var(--red); }
+
+  /* ---------- APP GRID ---------- */
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:16px;
+  }
+  .card{
+    position:relative;
+    display:flex; flex-direction:column;
+    background:linear-gradient(160deg, var(--surface), var(--bg-2));
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg);
+    padding:20px 20px 16px;
+    overflow:hidden;
+    cursor:pointer;
+    box-shadow:var(--shadow-card);
+    transition:.18s border-color, .18s transform, .18s box-shadow;
+  }
+  .card:hover{
+    border-color:#3d3d44; transform:translateY(-3px);
+    box-shadow:0 20px 36px -20px rgba(0,0,0,.75);
+  }
+  .card::before{
+    content:''; position:absolute; left:0; right:0; top:0; height:2.5px;
+    background:var(--border);
+  }
+  .card.live::before{ background:linear-gradient(90deg, var(--green), rgba(62,207,126,.2)); }
+  .card.draft::before{ background:linear-gradient(90deg, var(--amber), rgba(232,165,63,.2)); }
+  .card.archived{ opacity:.55; }
+  .card-star{
+    position:absolute; top:16px; right:16px; z-index:2;
+    width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    background:var(--surface-2); border:1px solid var(--border-soft); color:var(--text-faint);
+    transition:.15s;
+  }
+  .card-star:hover{ color:var(--amber); border-color:rgba(232,165,63,.4); }
+  .card-star.on{ color:var(--amber); background:rgba(232,165,63,.1); border-color:rgba(232,165,63,.3); }
+  .card-star svg{ width:14px; height:14px; }
+  .card-top{ display:flex; align-items:flex-start; gap:13px; margin-bottom:14px; padding-right:34px;}
+  .app-icon{
+    width:48px; height:48px; border-radius:13px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; color:#fff;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;
+    overflow:hidden;
+  }
+  .app-icon img{ width:100%; height:100%; object-fit:cover; }
+  .card-title-wrap{ min-width:0; flex:1; padding-top:1px; }
+  .card-title{ font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.1px; }
+  .card-version-row{ display:flex; align-items:center; gap:6px; margin-top:4px; }
+  .card-version{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-faint); }
+  .card-tags{ display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .tag-pill{
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px;
+    padding:3.5px 8px; border-radius:6px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--text-dim);
+  }
+  .tag-pill.group{ color:var(--blue); border-color:rgba(79,158,242,.25); background:rgba(79,158,242,.08); }
+  .card-desc{
+    font-size:12.5px; color:var(--text-dim); line-height:1.55; margin-bottom:16px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    min-height:38px;
+  }
+  .card-foot{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    margin-top:auto; padding-top:14px; border-top:1px solid var(--border-soft);
+  }
+  .card-foot-left{ display:flex; align-items:center; gap:7px; min-width:0; }
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; flex-shrink:0;
+    font-size:10.5px; font-weight:700; letter-spacing:.3px; text-transform:uppercase;
+    padding:4px 9px; border-radius:100px;
+  }
+  .badge.live{ background:rgba(62,207,126,.12); color:var(--green); }
+  .badge.draft{ background:rgba(232,165,63,.12); color:var(--amber); }
+  .badge.archived{ background:rgba(154,154,162,.12); color:var(--text-dim); }
+  .badge .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .badge.live .dot{ box-shadow:0 0 0 3px rgba(62,207,126,.18); animation:pulse 2s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.4;} }
+  .card-link{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--text-faint);
+    text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;
+    transition:.15s color;
+  }
+  .card-link:hover{ color:var(--red-2); }
+  .card-time{ font-size:11px; color:var(--text-faint); flex-shrink:0; }
+
+  .empty{
+    grid-column:1/-1; text-align:center; padding:76px 20px; color:var(--text-faint);
+    border:1.5px dashed var(--border); border-radius:var(--radius-lg);
+    background:linear-gradient(160deg, var(--surface), transparent);
+  }
+  .empty .empty-ico{
+    width:64px; height:64px; border-radius:16px; margin:0 auto 16px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface-2); border:1px solid var(--border-soft); color:var(--text-faint);
+  }
+  .empty h3{ color:var(--text); font-family:'Space Grotesk',sans-serif; font-size:16px; margin-bottom:6px; font-weight:700;}
+  .empty p{ font-size:13px; max-width:320px; margin:0 auto; line-height:1.5; }
+
+  /* ---------- MODAL ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(4,4,5,.72); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; z-index:100; padding:20px;
+    opacity:0; pointer-events:none; transition:.18s opacity;
+  }
+  .overlay.open{ opacity:1; pointer-events:auto; }
+  .modal{
+    background:var(--bg-2); border:1px solid var(--border); border-radius:16px;
+    width:100%; max-width:480px; max-height:88vh; overflow-y:auto;
+    box-shadow:0 30px 80px -20px rgba(0,0,0,.6);
+    transform:translateY(14px) scale(.98); transition:.18s transform;
+  }
+  .modal.wide{ max-width:680px; }
+  .overlay.open .modal{ transform:translateY(0) scale(1); }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:20px 22px 14px; border-bottom:1px solid var(--border-soft); position:sticky; top:0; background:var(--bg-2); z-index:2;}
+  .modal-head h2{ font-family:'Space Grotesk',sans-serif; font-size:17px; }
+  .modal-body{ padding:20px 22px 22px; display:flex; flex-direction:column; gap:16px;}
+  .modal-foot{ padding:16px 22px 22px; display:flex; justify-content:flex-end; gap:10px; }
+  .close-x{ background:none; border:none; color:var(--text-faint); font-size:20px; line-height:1; padding:4px;}
+  .close-x:hover{ color:var(--text); }
+
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{ font-size:12px; font-weight:600; color:var(--text-dim); }
+  .field .hint{ font-size:11px; color:var(--text-faint); margin-top:-2px;}
+  .field-row{ display:flex; gap:12px; }
+  .field-row .field{ flex:1; }
+  input[type=text], input[type=password], textarea, select{
+    background:var(--surface); border:1px solid var(--border); border-radius:9px;
+    padding:10px 12px; color:var(--text); font-size:13.5px; outline:none; font-family:inherit;
+    transition:.15s border-color;
+    width:100%;
+  }
+  input[type=text]:focus, input[type=password]:focus, textarea:focus, select:focus{ border-color:var(--red); }
+  textarea{ resize:vertical; min-height:70px; line-height:1.5;}
+  .radio-row{ display:flex; gap:8px; }
+  .radio-opt{
+    flex:1; border:1px solid var(--border); border-radius:10px; padding:10px 12px; cursor:pointer;
+    font-size:12.5px; text-align:center; transition:.15s;
+  }
+  .radio-opt.active{ border-color:var(--red); background:rgba(232,67,47,.08); color:#fff; }
+  .radio-opt small{ display:block; color:var(--text-faint); font-weight:400; margin-top:2px; }
+
+  .dropzone{
+    border:1.5px dashed var(--border); border-radius:12px; padding:26px 16px;
+    text-align:center; cursor:pointer; transition:.15s border-color, .15s background;
+    position:relative;
+  }
+  .dropzone.drag{ border-color:var(--red); background:rgba(232,67,47,.06); }
+  .dropzone svg{ opacity:.5; margin-bottom:8px; }
+  .dropzone .dz-title{ font-size:13px; font-weight:600; margin-bottom:2px;}
+  .dropzone .dz-sub{ font-size:11.5px; color:var(--text-faint); }
+  .dropzone.has-file{ border-style:solid; border-color:var(--green); background:rgba(62,207,126,.06); }
+  .dropzone input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .file-chip{ display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; flex-wrap:wrap; }
+  .file-chip .fname{ font-family:'JetBrains Mono',monospace; color:var(--green); }
+  .dropzone-icon{ padding:14px; }
+  .icon-preview{ width:56px; height:56px; border-radius:12px; object-fit:cover; margin:0 auto 8px; display:block; }
+
+  /* ---------- DETAIL VIEW ---------- */
+  .detail-head{
+    display:flex; align-items:flex-start; gap:16px; margin-bottom:24px; flex-wrap:wrap;
+  }
+  .back-btn{ display:flex; align-items:center; gap:6px; color:var(--text-dim); font-size:13px; margin-bottom:18px; cursor:pointer; width:fit-content;}
+  .back-btn:hover{ color:var(--text); }
+  .detail-icon{
+    width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; color:#fff; flex-shrink:0;
+    box-shadow:0 0 0 1px rgba(255,255,255,.06) inset;
+    overflow:hidden;
+  }
+  .detail-icon img{ width:100%; height:100%; object-fit:cover; }
+  .detail-title-row{ display:flex; align-items:center; gap:8px; }
+  .detail-title{ font-family:'Space Grotesk',sans-serif; font-size:23px; font-weight:700; }
+  .icon-btn-inline{ background:none; border:none; color:var(--text-faint); padding:4px; border-radius:6px; }
+  .icon-btn-inline:hover{ color:var(--text); background:var(--surface); }
+  .detail-meta{ display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap;}
+  .detail-desc{ color:var(--text-dim); font-size:13.5px; margin-top:10px; max-width:560px; line-height:1.6;}
+  .detail-actions{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; }
+  .meta-text{ font-size:11.5px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; }
+
+  .section-card{
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+    padding:22px 22px 20px; margin-bottom:16px;
+    box-shadow:var(--shadow-card);
+  }
+  .section-card h3{ font-family:'Space Grotesk',sans-serif; font-size:15px; margin-bottom:4px; font-weight:700; letter-spacing:-.1px;}
+  .section-card .sub{ font-size:12px; color:var(--text-faint); margin-bottom:18px;}
+  .section-head-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+
+  .live-link-box{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--bg-2); border:1px solid var(--border-soft); border-radius:10px; padding:12px 14px; flex-wrap:wrap;
+  }
+  .live-link-box a{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--red); text-decoration:none; word-break:break-all;}
+  .live-link-box a:hover{ text-decoration:underline; }
+  .live-link-actions{ display:flex; gap:8px; flex-shrink:0; }
+
+  .version-list{ display:flex; flex-direction:column; }
+  .version-row{
+    display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--border-soft); font-size:12.5px; flex-wrap:wrap;
+  }
+  .version-row:last-child{ border-bottom:none; }
+  .version-row .vtag{
+    font-family:'JetBrains Mono',monospace; background:var(--surface-2); border:1px solid var(--border);
+    padding:3px 9px; border-radius:6px; font-size:11.5px; flex-shrink:0;
+  }
+  .version-row .vtag.current{ border-color:var(--green); color:var(--green); }
+  .version-row .vdate{ color:var(--text-faint); font-size:11.5px; }
+  .version-row .vnote{ width:100%; color:var(--text-dim); font-size:12px; margin-top:2px; padding-left:2px; }
+  .version-row .vactions{ margin-left:auto; display:flex; gap:6px; }
+  .version-row input[type=checkbox]{ width:15px; height:15px; accent-color:var(--red); }
+
+  .diff-block{ background:#0d0d0f; border:1px solid var(--border-soft); border-radius:10px; padding:14px; margin-bottom:12px; overflow-x:auto; }
+  .diff-block .fname{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); margin-bottom:8px; font-weight:600;}
+  .diff-block pre{ font-family:'JetBrains Mono',monospace; font-size:11.5px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+  .diff-add{ color:var(--green); }
+  .diff-del{ color:var(--red); }
+  .diff-hunk{ color:var(--text-faint); }
+  .diff-ctx{ color:var(--text-dim); }
+
+  .toast-wrap{ position:fixed; bottom:24px; right:24px; z-index:200; display:flex; flex-direction:column; gap:10px; }
+  .toast{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    padding:12px 16px; font-size:13px; display:flex; align-items:center; gap:10px;
+    box-shadow:0 14px 30px -12px rgba(0,0,0,.6);
+    animation:toastIn .2s ease;
+    max-width:340px;
+  }
+  @keyframes toastIn{ from{ opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .toast.err{ border-color:var(--red-dim); }
+  .toast.ok .dotstat{ background:var(--green); }
+  .toast.err .dotstat{ background:var(--red); }
+  .toast .dotstat{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+  .spinner{
+    width:15px; height:15px; border-radius:50%;
+    border:2px solid rgba(255,255,255,.25); border-top-color:#fff;
+    animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .banner{
+    display:flex; align-items:center; gap:10px; background:rgba(232,165,63,.08);
+    border:1px solid rgba(232,165,63,.25); color:var(--amber); padding:12px 16px;
+    border-radius:10px; font-size:13px; margin-bottom:22px;
+  }
+  .banner button{ margin-left:auto; }
+
+  .kebab{ position:relative; }
+  .kebab-menu{
+    position:absolute; right:0; top:calc(100% + 6px); background:var(--surface-2); border:1px solid var(--border);
+    border-radius:10px; min-width:170px; overflow:hidden; z-index:20;
+    box-shadow:0 14px 30px -12px rgba(0,0,0,.6);
+  }
+  .kebab-menu button{
+    display:flex; width:100%; text-align:left; padding:10px 14px; font-size:12.5px; background:none; border:none; color:var(--text);
+  }
+  .kebab-menu button:hover{ background:var(--surface); }
+  .kebab-menu button.danger{ color:#ff8a7a; }
+
+  /* ---------- APP SHELL / SIDEBAR ---------- */
+  .app-shell{ display:flex; align-items:flex-start; }
+  .sidebar{
+    width:236px; flex-shrink:0; position:sticky; top:64px;
+    height:calc(100vh - 64px); overflow-y:auto;
+    border-right:1px solid var(--border-soft);
+    padding:16px 14px; display:flex; flex-direction:column; gap:2px;
+  }
+  .side-item{
+    position:relative;
+    display:flex; align-items:center; gap:11px;
+    background:none; border:none; color:var(--text-dim);
+    padding:9px 12px; border-radius:9px; font-size:13.5px; font-weight:600;
+    text-align:left; width:100%; transition:.15s background, .15s color;
+  }
+  .side-item svg{ flex-shrink:0; opacity:.75; }
+  .side-item:hover{ background:var(--surface); color:var(--text); }
+  .side-item.active{ background:rgba(232,67,47,.13); color:#fff; }
+  .side-item.active svg{ color:var(--red-2); opacity:1; }
+  .side-item.active::before{
+    content:''; position:absolute; left:-14px; top:50%; transform:translateY(-50%);
+    width:3px; height:16px; border-radius:0 3px 3px 0; background:var(--red);
+  }
+  .side-sep{ height:1px; background:var(--border-soft); margin:10px 4px; }
+  .side-label{ font-size:10px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:var(--text-faint); padding:12px 12px 6px; }
+  .sidebar-foot{ margin-top:auto; padding:14px 12px 4px; }
+  .sidebar-foot .status-line{
+    display:flex; align-items:center; gap:7px; font-size:11px; color:var(--text-faint);
+    padding-top:12px; border-top:1px solid var(--border-soft);
+  }
+  .sidebar-foot .status-dot{ width:6px; height:6px; border-radius:50%; background:var(--green); flex-shrink:0; box-shadow:0 0 0 3px rgba(62,207,126,.15); }
+  .main-area{ flex:1; min-width:0; }
+
+  /* ---------- DASHBOARD ---------- */
+  .dash-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:24px; }
+  .dash-card{
+    position:relative; overflow:hidden;
+    background:linear-gradient(160deg, var(--surface), var(--bg-2)); border:1px solid var(--border-soft);
+    border-radius:var(--radius); padding:17px 19px;
+    box-shadow:var(--shadow-card);
+  }
+  .dash-card .dash-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .dash-card .stat-ico{
+    width:30px; height:30px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface-2); border:1px solid var(--border-soft); color:var(--text-dim);
+  }
+  .dash-card .stat-ico svg{ width:14px; height:14px; }
+  .dash-card .n{ font-family:'Space Grotesk',sans-serif; font-size:25px; font-weight:700; letter-spacing:-.3px; }
+  .dash-card .l{ font-size:12px; color:var(--text-dim); margin-top:3px; }
+  .dash-cols{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
+  @media (max-width:900px){ .dash-cols{ grid-template-columns:1fr; } }
+
+  .bar-list{ display:flex; flex-direction:column; gap:14px; }
+  .bar-row{ display:flex; align-items:center; gap:10px; }
+  .bar-row .bar-label{ width:100px; flex-shrink:0; font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bar-track{ flex:1; height:7px; background:var(--surface-2); border-radius:6px; overflow:hidden; }
+  .bar-fill{ height:100%; background:linear-gradient(90deg, var(--red-2), var(--red)); border-radius:6px; }
+  .bar-row .bar-n{ width:26px; flex-shrink:0; text-align:right; font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--text-faint); }
+
+  .activity-list{ display:flex; flex-direction:column; }
+  .activity-row{ display:flex; align-items:flex-start; gap:11px; padding:12px 0; border-bottom:1px solid var(--border-soft); }
+  .activity-row:last-child{ border-bottom:none; }
+  .act-ico{
+    width:28px; height:28px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:var(--surface-2); border:1px solid var(--border);
+  }
+  .act-ico svg{ width:13px; height:13px; }
+  .act-ico.publish{ color:var(--green); border-color:rgba(62,207,126,.3); background:rgba(62,207,126,.08); }
+  .act-ico.update{ color:var(--blue); border-color:rgba(79,158,242,.3); background:rgba(79,158,242,.08); }
+  .act-ico.create{ color:var(--red); border-color:rgba(232,67,47,.3); background:rgba(232,67,47,.08); }
+  .act-ico.delete, .act-ico.unpublish{ color:#ff8a7a; border-color:var(--red-dim); background:rgba(232,67,47,.06); }
+  .act-ico.other{ color:var(--amber); border-color:rgba(232,165,63,.3); background:rgba(232,165,63,.08); }
+  .act-body{ flex:1; min-width:0; }
+  .act-title{ font-size:12.5px; }
+  .act-title b{ font-weight:700; }
+  .act-detail{ font-size:11.5px; color:var(--text-faint); margin-top:1px; }
+  .act-time{ font-size:11px; color:var(--text-faint); flex-shrink:0; white-space:nowrap; font-family:'JetBrains Mono',monospace; }
+  .empty-mini{ text-align:center; padding:30px 10px; color:var(--text-faint); font-size:12.5px; }
+  .see-all{ display:flex; align-items:center; justify-content:center; gap:4px; text-align:center; font-size:12px; font-weight:600; color:var(--red-2); text-decoration:none; padding-top:14px; margin-top:2px; border-top:1px solid var(--border-soft); }
+  .see-all:hover{ text-decoration:underline; }
+
+  /* ---------- TRACK BADGE ---------- */
+  .track-badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700;
+    letter-spacing:.3px; text-transform:uppercase; padding:4px 9px; border-radius:100px;
+  }
+  .track-badge.production{ background:rgba(62,207,126,.12); color:var(--green); }
+  .track-badge.beta{ background:rgba(79,158,242,.12); color:var(--blue); }
+  .track-badge.alpha{ background:rgba(232,165,63,.12); color:var(--amber); }
+  .track-badge.internal{ background:rgba(154,154,162,.12); color:var(--text-dim); }
+
+  /* ---------- RELEASES PAGE ---------- */
+  .rel-row{
+    display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--border-soft);
+    cursor:pointer; flex-wrap:wrap;
+  }
+  .rel-row:hover{ background:var(--surface); border-radius:8px; }
+  .rel-row:last-child{ border-bottom:none; }
+  .rel-icon{
+    width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; color:#fff; flex-shrink:0; overflow:hidden;
+  }
+  .rel-icon img{ width:100%; height:100%; object-fit:cover; }
+  .rel-main{ min-width:150px; }
+  .rel-name{ font-weight:700; font-size:13px; }
+  .rel-sub{ font-size:11.5px; color:var(--text-faint); }
+  .rel-note{ flex:1; min-width:160px; font-size:12px; color:var(--text-dim); }
+  .rel-right{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+  /* ---------- TABS ---------- */
+  .tab-row{ display:flex; gap:4px; border-bottom:1px solid var(--border-soft); margin-bottom:20px; flex-wrap:wrap; }
+  .tab-btn{
+    background:none; border:none; color:var(--text-dim); font-size:13px; font-weight:600;
+    padding:11px 16px; border-bottom:2px solid transparent; margin-bottom:-1px; transition:.15s;
+  }
+  .tab-btn:hover{ color:var(--text); }
+  .tab-btn.active{ color:#fff; border-bottom-color:var(--red); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  .rollout-row{ display:flex; align-items:center; gap:14px; }
+  .rollout-row input[type=range]{ flex:1; accent-color:var(--red); }
+  .rollout-val{ font-family:'JetBrains Mono',monospace; font-size:13px; width:44px; text-align:right; flex-shrink:0; }
+  .file-row{
+    display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-soft);
+    font-size:12.5px; font-family:'JetBrains Mono',monospace;
+  }
+  .file-row:last-child{ border-bottom:none; }
+  .file-row svg{ opacity:.5; flex-shrink:0; }
+  .danger-zone{ border:1px solid var(--red-dim); border-radius:var(--radius); padding:18px; background:rgba(232,67,47,.04); }
+  .danger-zone h3{ color:#ff8a7a; }
+
+  /* ---------- COMMAND PALETTE ---------- */
+  .cmdk-overlay{
+    position:fixed; inset:0; background:rgba(4,4,5,.72); backdrop-filter:blur(4px);
+    display:flex; align-items:flex-start; justify-content:center; z-index:150; padding-top:12vh;
+    opacity:0; pointer-events:none; transition:.15s opacity;
+  }
+  .cmdk-overlay.open{ opacity:1; pointer-events:auto; }
+  .cmdk-box{
+    width:100%; max-width:560px; background:var(--bg-2); border:1px solid var(--border);
+    border-radius:14px; box-shadow:0 30px 80px -20px rgba(0,0,0,.6); overflow:hidden;
+    transform:translateY(10px); transition:.15s transform;
+  }
+  .cmdk-overlay.open .cmdk-box{ transform:translateY(0); }
+  .cmdk-input-row{ display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border-soft); }
+  .cmdk-input-row svg{ opacity:.5; flex-shrink:0; }
+  .cmdk-input-row input{ flex:1; background:none; border:none; outline:none; color:var(--text); font-size:14.5px; }
+  .cmdk-hint{ font-size:10.5px; color:var(--text-faint); border:1px solid var(--border); border-radius:5px; padding:2px 6px; flex-shrink:0; }
+  .cmdk-results{ max-height:340px; overflow-y:auto; padding:8px; }
+  .cmdk-item{
+    display:flex; align-items:center; gap:11px; padding:10px 10px; border-radius:9px; cursor:pointer; font-size:13px;
+  }
+  .cmdk-item.sel{ background:var(--surface); }
+  .cmdk-item .ci-icon{
+    width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    background:var(--surface-2); border:1px solid var(--border); overflow:hidden;
+  }
+  .cmdk-item .ci-icon img{ width:100%; height:100%; object-fit:cover; }
+  .cmdk-item .ci-label{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cmdk-item .ci-sub{ font-size:11px; color:var(--text-faint); flex-shrink:0; }
+  .cmdk-empty{ text-align:center; padding:26px 10px; color:var(--text-faint); font-size:12.5px; }
+  .cmdk-group-label{ font-size:10.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-faint); padding:10px 10px 4px; }
+
+  @media (max-width:900px){
+    .sidebar{
+      position:static; height:auto; width:100%; flex-direction:row; overflow-x:auto;
+      border-right:none; border-bottom:1px solid var(--border-soft); padding:10px 12px; gap:6px;
+    }
+    .side-item{ width:auto; white-space:nowrap; }
+    .side-label, .side-sep{ display:none; }
+    .app-shell{ flex-direction:column; }
+  }
+  @media (max-width:600px){
+    .topbar{ padding:12px 16px; flex-wrap:wrap; }
+    .topbar-search{ order:3; max-width:none; width:100%; }
+    .page{ padding:24px 16px 60px; }
+    .detail-actions{ margin-left:0; width:100%; }
+    .field-row{ flex-direction:column; }
+    .dash-cols{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 12L10 18L20 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">VonHub Console</div>
+      <div class="brand-sub" id="brandRepoBadge" title="Bu cihazda uygulamaların okunduğu/yazıldığı GitHub deposu. Başka bir cihazda/sitede farklıysa aynı listeyi göremezsin.">app hub</div>
+    </div>
+  </div>
+  <div class="topbar-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="searchInput" type="text" placeholder="Uygulama ara...">
+    <span class="kbd-hint">Ctrl K</span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-icon btn-ghost" id="cmdkBtn" title="Hızlı ara (Ctrl+K)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9l2.5 2.5L8 14"/><line x1="13" y1="14" x2="16" y2="14"/></svg>
+    </button>
+    <button class="btn btn-icon btn-ghost" id="settingsBtn" title="Ayarlar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 4.29l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.4a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9c0 .67.39 1.27 1 1.51h.6a2 2 0 010 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
+    </button>
+    <div class="topbar-sep"></div>
+    <button class="btn btn-primary" id="newAppBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Yeni Uygulama
+    </button>
+  </div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="side-label">Genel Bakış</div>
+    <button class="side-item" data-view="dashboard">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </button>
+    <button class="side-item" data-view="home">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Uygulamalarım
+    </button>
+    <div class="side-label">Kayıtlar</div>
+    <button class="side-item" data-view="releases">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+      Sürümler
+    </button>
+    <button class="side-item" data-view="activity">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Aktivite
+    </button>
+    <div class="side-sep"></div>
+    <button class="side-item" data-view="settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 4.29l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.4a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9c0 .67.39 1.27 1 1.51h.6a2 2 0 010 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
+      Ayarlar
+    </button>
+    <div class="sidebar-foot">
+      <div class="status-line"><span class="status-dot"></span>GitHub Pages üzerinden yayınlanıyor</div>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <div id="dashboardView" class="page" style="display:none;"></div>
+
+    <div id="homeView" class="page" style="display:none;">
+      <div id="tokenBanner" class="banner" style="display:none;">
+        ⚠️ GitHub bağlantısı yapılmadı. Uygulama oluşturmak için ayarlardan token gir.
+        <button class="btn btn-sm btn-primary" id="bannerSettingsBtn">Ayarları Aç</button>
+      </div>
+      <div class="page-head">
+        <div>
+          <div class="page-title">Uygulamalarım</div>
+          <div class="page-desc">HTML uygulamalarını burada topla, versiyonla ve GitHub Pages ile yayınla.</div>
+        </div>
+      </div>
+      <div class="stat-row" id="statRow"></div>
+      <div class="filter-bar" id="filterBar"></div>
+      <div class="grid" id="appGrid"></div>
+    </div>
+
+    <div id="detailView" class="page" style="display:none;"></div>
+    <div id="releasesView" class="page" style="display:none;"></div>
+    <div id="activityView" class="page" style="display:none;"></div>
+  </main>
+</div>
+
+<!-- Command Palette -->
+<div class="cmdk-overlay" id="cmdkOverlay">
+  <div class="cmdk-box">
+    <div class="cmdk-input-row">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="cmdkInput" placeholder="Uygulama ara ya da komut çalıştır...">
+      <span class="cmdk-hint">Esc</span>
+    </div>
+    <div class="cmdk-results" id="cmdkResults"></div>
+  </div>
+</div>
+
+<!-- New App Modal -->
+<div class="overlay" id="newAppOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Yeni Uygulama</h2>
+      <button class="close-x" data-close="newAppOverlay">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Simge (opsiyonel)</label>
+        <div class="dropzone dropzone-icon" id="na_icon_dropzone">
+          <input type="file" id="na_icon_file" accept="image/*">
+          <div id="na_icon_content">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <div class="dz-sub">PNG / SVG / JPG yükle</div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Uygulama adı</label>
+        <input type="text" id="na_name" placeholder="ör. Panther POS">
+      </div>
+      <div class="field">
+        <label>Detaylı açıklama</label>
+        <textarea id="na_desc" placeholder="Uygulama ne işe yarıyor, kimin için?"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Kategori</label>
+          <input type="text" id="na_category" list="categoryList" placeholder="ör. POS, Oyun, Araç">
+          <datalist id="categoryList"></datalist>
+        </div>
+        <div class="field">
+          <label>Grup</label>
+          <input type="text" id="na_group" list="groupList" placeholder="ör. Panther, SCIURUS">
+          <datalist id="groupList"></datalist>
+        </div>
+      </div>
+      <div class="field">
+        <label>Versiyon</label>
+        <input type="text" id="na_version" placeholder="1.0.0" value="1.0.0">
+      </div>
+      <div class="field">
+        <label>Dosya türü</label>
+        <div class="radio-row" id="na_filemode">
+          <div class="radio-opt active" data-filemode="single">Tek HTML<br><small>tek dosya</small></div>
+          <div class="radio-opt" data-filemode="multi">Çoklu dosya / ZIP<br><small>HTML+CSS+JS</small></div>
+        </div>
+      </div>
+      <div class="field" id="na_single_wrap">
+        <label>HTML dosyası</label>
+        <div class="dropzone" id="na_dropzone">
+          <input type="file" id="na_file" accept=".html,.htm">
+          <div id="na_dz_content">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div class="dz-title">HTML dosyasını sürükle veya seç</div>
+            <div class="dz-sub">.html / .htm</div>
+          </div>
+        </div>
+      </div>
+      <div class="field" id="na_multi_wrap" style="display:none;">
+        <label>Dosyalar (bir .zip veya birden fazla dosya, içinde index.html olmalı)</label>
+        <div class="dropzone" id="na_multi_dropzone">
+          <input type="file" id="na_multi_file" accept=".html,.htm,.css,.js,.zip,.json,.svg,.png,.jpg,.jpeg,.gif,.woff,.woff2" multiple>
+          <div id="na_multi_dz_content">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div class="dz-title">Dosyaları veya .zip sürükle</div>
+            <div class="dz-sub">İçinde index.html olmalı</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close="newAppOverlay">Vazgeç</button>
+      <button class="btn btn-primary" id="na_submit">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Modal -->
+<div class="overlay" id="renameOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2>Yeniden Adlandır</h2><button class="close-x" data-close="renameOverlay">&times;</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Uygulama adı</label><input type="text" id="rn_name"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close="renameOverlay">Vazgeç</button>
+      <button class="btn btn-primary" id="rn_submit">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Diff Modal -->
+<div class="overlay" id="diffOverlay">
+  <div class="modal wide">
+    <div class="modal-head"><h2 id="diffTitle">Versiyon Farkı</h2><button class="close-x" data-close="diffOverlay">&times;</button></div>
+    <div class="modal-body" id="diffBody"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Ayarlar</h2>
+      <button class="close-x" data-close="settingsOverlay">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>GitHub Personal Access Token</label>
+        <input type="password" id="st_token" placeholder="ghp_xxxxxxxxxxxx">
+        <div class="hint">Repo oluşturma/yazma ve Pages izinleri için "repo" scope'u yeterli. Token sadece bu tarayıcıda (localStorage) saklanır, koda gömülmez.</div>
+      </div>
+      <div class="field">
+        <label>GitHub kullanıcı adı</label>
+        <input type="text" id="st_username" placeholder="Test Et / Kaydet ile otomatik doldurulur" readonly>
+      </div>
+      <div class="field">
+        <label>Depolama modu</label>
+        <div class="radio-row">
+          <div class="radio-opt" data-mode="single">Tek repo<br><span style="color:var(--text-faint)">tüm uygulamalar</span></div>
+          <div class="radio-opt" data-mode="multi">Repo başına<br><span style="color:var(--text-faint)">her uygulama ayrı</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Hub repo adı</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="st_hubrepo" placeholder="vonhub-console-data" value="vonhub-console-data" style="flex:1;">
+          <button class="btn btn-sm btn-ghost" id="st_scan" type="button" style="flex-shrink:0;">Depoları Tara</button>
+        </div>
+        <div class="hint">Uygulama listesi (manifest) burada tutulur. Tek repo modunda dosyalar da buraya kaydedilir. <b>Farklı cihaz/sitelerde aynı uygulama listesini görmek için burada girdiğin kullanıcı adı ve repo adının, uygulamaları eklediğin yerdekiyle birebir aynı olması gerekir.</b> Emin değilsen "Depoları Tara" butonuna bas — token'ınla hesabındaki tüm repoları tarayıp içinde gerçek uygulama listesi (manifest.json) olanları bulur.</div>
+        <div id="st_scanResults" style="display:none; margin-top:10px; border:1px solid var(--border-soft); border-radius:10px; overflow:hidden;"></div>
+      </div>
+      <div class="field">
+        <label style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <span>Otomatik depo taraması</span>
+          <span style="display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-weight:400;">
+            <input type="checkbox" id="st_autoscan" style="width:15px; height:15px; accent-color:var(--red); cursor:pointer;">
+            <span style="font-size:12px; color:var(--text-dim);">Aktif</span>
+          </span>
+        </label>
+        <div class="hint">Açıksa, "Depoları Tara" manuel buton olarak kalmaya devam eder; ayrıca sayfa her açıldığında veya yenilendiğinde depolar arka planda otomatik taranır ve manifest.json içeren en son güncellenmiş repo otomatik seçilip kullanılır.</div>
+      </div>
+      <div class="field">
+        <label>Önbellek</label>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn btn-sm btn-ghost" id="st_clearcache" type="button">Önbelleği Temizle</button>
+          <span id="st_clearcache_status" style="font-size:11px; color:var(--text-faint);"></span>
+        </div>
+        <div class="hint">Yerelde tutulan uygulama listesi önbelleğini siler ve GitHub'dan taze veri indirir. Token ve diğer ayarların silinmez.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="st_test">Bağlantıyı Test Et</button>
+      <button class="btn btn-primary" id="st_save">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ============================= STATE ============================= */
+const LS_SETTINGS = 'vonlab_console_settings';
+const LS_MANIFEST_CACHE = 'vonlab_console_manifest_cache';
+
+let settings = JSON.parse(localStorage.getItem(LS_SETTINGS) || 'null') || {
+  username:'', token:'', mode:'single', hubRepo:'vonhub-console-data', autoScan:false
+};
+if(typeof settings.autoScan !== 'boolean') settings.autoScan = false;
+let apps = JSON.parse(localStorage.getItem(LS_MANIFEST_CACHE) || '[]');
+let pendingFile = null;      // {name, content} - single html for new app
+let pendingMultiFiles = null; // [{path, content}] for new app
+let pendingIcon = null;       // dataURL string
+let updateFile = null;
+let updateMultiFiles = null;
+let uiFilters = { q:'', category:'', group:'', favOnly:false, showArchived:false };
+let diffSelection = [];
+
+const COLORS = ['#e8432f','#c2410c','#a3271a','#7a2c22','#d9534f','#b6301f'];
+function colorFor(seed){
+  let h=0; for(const c of seed) h = (h*31 + c.charCodeAt(0)) >>> 0;
+  return COLORS[h % COLORS.length];
+}
+function initials(name){
+  return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('') || '?';
+}
+function slugify(s){
+  return s.toLowerCase().trim()
+    .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'app';
+}
+function fmtBytes(n){
+  if(n == null) return '—';
+  if(n < 1024) return n + ' B';
+  if(n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+  return (n/1024/1024).toFixed(2) + ' MB';
+}
+function appDirOf(app){
+  return app.path.includes('/') ? app.path.slice(0, app.path.lastIndexOf('/')+1) : '';
+}
+function normApp(app){
+  // eski manifest kayıtlarıyla uyum için varsayılan alanlar
+  app.icon = app.icon || null;
+  app.category = app.category || '';
+  app.group = app.group || '';
+  app.favorite = !!app.favorite;
+  app.archived = !!app.archived;
+  app.files = app.files || [app.path.split('/').pop()];
+  app.customDomain = app.customDomain || '';
+  app.analytics = app.analytics || { enabled:false, code:'' };
+  app.versionHistory = app.versionHistory || [];
+  app.track = app.track || 'production';
+  app.rollout = (app.rollout != null) ? app.rollout : 100;
+  app.createdAt = app.createdAt || (app.versionHistory[0] && app.versionHistory[0].date) || new Date().toISOString();
+  return app;
+}
+const TRACK_LABEL = { production:'Production', beta:'Beta', alpha:'Alpha', internal:'İç Test' };
+
+/* ============================= ACTIVITY LOG ============================= */
+const LS_ACTIVITY = 'vonlab_console_activity';
+let activityLog = JSON.parse(localStorage.getItem(LS_ACTIVITY) || '[]');
+function logActivity(type, appName, detail){
+  activityLog.unshift({ ts: Date.now(), type, appName: appName||'', detail: detail||'' });
+  activityLog = activityLog.slice(0, 300);
+  localStorage.setItem(LS_ACTIVITY, JSON.stringify(activityLog));
+}
+const ACT_LABEL = {
+  create:'oluşturuldu', publish:'yayınlandı', unpublish:'yayından kaldırıldı', update:'güncellendi',
+  rollback:'geri alındı', rename:'yeniden adlandırıldı', archive:'arşivlendi', unarchive:'arşivden çıkarıldı',
+  delete:'silindi', domain:'domain güncellendi', analytics:'analitik güncellendi', track:'yayın kanalı değişti'
+};
+const ACT_ICON = {
+  create:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  publish:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>`,
+  update:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  delete:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>`,
+  unpublish:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+};
+function actIconClass(type){
+  if(type==='publish') return 'publish';
+  if(type==='update' || type==='rollback') return 'update';
+  if(type==='create') return 'create';
+  if(type==='delete' || type==='unpublish') return 'delete';
+  return 'other';
+}
+function actIconSvg(type){
+  return ACT_ICON[type] || `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>`;
+}
+function timeAgo(ts){
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s<60) return 'az önce';
+  if(s<3600) return Math.floor(s/60)+'dk önce';
+  if(s<86400) return Math.floor(s/3600)+'sa önce';
+  if(s<86400*30) return Math.floor(s/86400)+'g önce';
+  return new Date(ts).toLocaleDateString('tr-TR');
+}
+
+/* ============================= TOASTS ============================= */
+function toast(msg, type='ok'){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = `<span class="dotstat"></span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='.2s'; setTimeout(()=>el.remove(),200); }, 4200);
+}
+
+/* ============================= GITHUB API ============================= */
+const GH = 'https://api.github.com';
+function ghHeaders(){
+  return {
+    'Authorization': 'token ' + settings.token,
+    'Accept': 'application/vnd.github+json'
+  };
+}
+async function ghFetch(path, opts={}){
+  const res = await fetch(GH + path, { cache:'no-store', ...opts, headers: { ...ghHeaders(), ...(opts.headers||{}) } });
+  if(!res.ok){
+    let msg = res.status + ' ' + res.statusText;
+    try{
+      const j = await res.json();
+      if(j.message) msg = j.message;
+      if(Array.isArray(j.errors) && j.errors.length){
+        const detail = j.errors.map(e => e.message || `${e.field||''} ${e.code||''}`.trim()).filter(Boolean).join('; ');
+        if(detail) msg += ' — ' + detail;
+      }
+    }catch(e){}
+    const err = new Error(msg); err.status = res.status; throw err;
+  }
+  if(res.status === 204) return null;
+  return res.json();
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function toB64Utf8(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+function fromB64Utf8(b64){
+  const bin = atob(b64.replace(/\n/g,''));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+async function ghEnsureRepo(repoName){
+  try{
+    return await ghFetch(`/repos/${settings.username}/${repoName}`);
+  }catch(e){
+    if(e.status === 404){
+      try{
+        return await ghFetch('/user/repos', {
+          method:'POST',
+          body: JSON.stringify({ name: repoName, private:false, auto_init:true, description:'VonHub Console tarafından oluşturuldu' })
+        });
+      }catch(createErr){
+        if(/already exists/i.test(createErr.message)){
+          return await ghFetch(`/repos/${settings.username}/${repoName}`);
+        }
+        throw createErr;
+      }
+    }
+    throw e;
+  }
+}
+async function ghGetFile(repo, path){
+  try{
+    return await ghFetch(`/repos/${settings.username}/${repo}/contents/${path}`);
+  }catch(e){
+    if(e.status === 404) return null;
+    throw e;
+  }
+}
+async function ghPutFile(repo, path, content, message, branch, attempt=0){
+  try{
+    const existing = await ghGetFile(repo, path);
+    const body = { message, content: toB64Utf8(content), branch: branch || 'main' };
+    if(existing && existing.sha) body.sha = existing.sha;
+    return await ghFetch(`/repos/${settings.username}/${repo}/contents/${path}`, { method:'PUT', body: JSON.stringify(body) });
+  }catch(e){
+    if(e.status === 404 && attempt < 3){
+      await sleep(1200 * (attempt+1));
+      return ghPutFile(repo, path, content, message, branch, attempt+1);
+    }
+    throw e;
+  }
+}
+async function ghDeleteFile(repo, path, message, branch){
+  const existing = await ghGetFile(repo, path);
+  if(!existing) return;
+  return await ghFetch(`/repos/${settings.username}/${repo}/contents/${path}`, {
+    method:'DELETE',
+    body: JSON.stringify({ message, sha: existing.sha, branch: branch || 'main' })
+  });
+}
+async function ghEnablePages(repo, branch, cname){
+  let pages;
+  try{
+    pages = await ghFetch(`/repos/${settings.username}/${repo}/pages`, {
+      method:'POST',
+      body: JSON.stringify({ source: { branch: branch || 'main', path: '/' } })
+    });
+  }catch(e){
+    if(e.status === 409){
+      pages = await ghFetch(`/repos/${settings.username}/${repo}/pages`);
+    } else throw e;
+  }
+  if(cname){
+    await ghFetch(`/repos/${settings.username}/${repo}/pages`, { method:'PUT', body: JSON.stringify({ cname }) });
+  }
+  return pages;
+}
+async function ghDisablePages(repo){
+  try{ await ghFetch(`/repos/${settings.username}/${repo}/pages`, { method:'DELETE' }); }
+  catch(e){ if(e.status !== 404) throw e; }
+}
+async function ghDeleteRepo(repo){
+  return await ghFetch(`/repos/${settings.username}/${repo}`, { method:'DELETE' });
+}
+async function ghGetTree(repo, sha){
+  return await ghFetch(`/repos/${settings.username}/${repo}/git/trees/${sha}?recursive=1`);
+}
+async function ghGetBlob(repo, sha){
+  return await ghFetch(`/repos/${settings.username}/${repo}/git/blobs/${sha}`);
+}
+async function ghLatestCommit(repo, path){
+  const list = await ghFetch(`/repos/${settings.username}/${repo}/commits?path=${encodeURIComponent(path)}&per_page=1`);
+  return list && list[0] ? list[0] : null;
+}
+async function ghPagesBuild(repo){
+  try{ return await ghFetch(`/repos/${settings.username}/${repo}/pages/builds/latest`); }
+  catch(e){ return null; }
+}
+async function ghCompare(repo, base, head){
+  return await ghFetch(`/repos/${settings.username}/${repo}/compare/${base}...${head}`);
+}
+
+async function loadManifest(){
+  const file = await ghGetFile(settings.hubRepo, 'manifest.json');
+  if(!file) return [];
+  return JSON.parse(fromB64Utf8(file.content)).map(normApp);
+}
+async function saveManifest(list){
+  await ghPutFile(settings.hubRepo, 'manifest.json', JSON.stringify(list, null, 2), 'manifest güncellendi');
+  apps = list;
+  localStorage.setItem(LS_MANIFEST_CACHE, JSON.stringify(apps));
+}
+async function patchApp(id, patchFn){
+  const list = await loadManifest();
+  const idx = list.findIndex(a=>a.id===id);
+  if(idx === -1) throw new Error('Uygulama bulunamadı.');
+  patchFn(list[idx]);
+  await saveManifest(list);
+  return list[idx];
+}
+
+/* ============================= RENDER: HOME ============================= */
+function renderStats(){
+  const live = apps.filter(a=>a.published && !a.archived).length;
+  const draft = apps.filter(a=>!a.published && !a.archived).length;
+  const archived = apps.filter(a=>a.archived).length;
+  const ICO = {
+    total:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+    live:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+    draft:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+    archived:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="5" rx="1.2"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9"/><path d="M10 13h4"/></svg>'
+  };
+  document.getElementById('statRow').innerHTML = `
+    <div class="stat-chip"><div class="stat-ico">${ICO.total}</div><div><div class="n">${apps.length}</div><div class="l">Toplam uygulama</div></div></div>
+    <div class="stat-chip"><div class="stat-ico" style="color:var(--green)">${ICO.live}</div><div><div class="n" style="color:var(--green)">${live}</div><div class="l">Yayında</div></div></div>
+    <div class="stat-chip"><div class="stat-ico" style="color:var(--amber)">${ICO.draft}</div><div><div class="n" style="color:var(--amber)">${draft}</div><div class="l">Taslak</div></div></div>
+    <div class="stat-chip"><div class="stat-ico">${ICO.archived}</div><div><div class="n" style="color:var(--text-dim)">${archived}</div><div class="l">Arşiv</div></div></div>
+  `;
+}
+function renderFilterBar(){
+  const cats = [...new Set(apps.map(a=>a.category).filter(Boolean))];
+  const groups = [...new Set(apps.map(a=>a.group).filter(Boolean))];
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = `
+    <button class="chip ${uiFilters.category===''?'active':''}" data-cat="">Tümü</button>
+    ${cats.map(c=>`<button class="chip ${uiFilters.category===c?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('')}
+    ${groups.length ? `<select class="chip-select" id="groupFilterSelect"><option value="">Tüm gruplar</option>${groups.map(g=>`<option value="${escapeHtml(g)}" ${uiFilters.group===g?'selected':''}>${escapeHtml(g)}</option>`).join('')}</select>` : ''}
+    <div class="switch-row">
+      <button class="chip ${uiFilters.favOnly?'active':''}" id="favOnlyChip">★ Favoriler</button>
+      <span class="switch-label">Arşivi göster</span>
+      <label class="switch"><input type="checkbox" id="showArchivedToggle" ${uiFilters.showArchived?'checked':''}><span class="slider"></span></label>
+    </div>
+  `;
+  bar.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click', ()=>{ uiFilters.category = b.dataset.cat; renderFilterBar(); renderGrid(); }));
+  const gsel = document.getElementById('groupFilterSelect');
+  if(gsel) gsel.addEventListener('change', ()=>{ uiFilters.group = gsel.value; renderGrid(); });
+  document.getElementById('favOnlyChip').addEventListener('click', ()=>{ uiFilters.favOnly = !uiFilters.favOnly; renderFilterBar(); renderGrid(); });
+  document.getElementById('showArchivedToggle').addEventListener('change', e=>{ uiFilters.showArchived = e.target.checked; renderGrid(); });
+}
+function renderGrid(){
+  const grid = document.getElementById('appGrid');
+  let list = apps.filter(a =>
+    a.name.toLowerCase().includes(uiFilters.q.toLowerCase()) &&
+    (uiFilters.category==='' || a.category===uiFilters.category) &&
+    (uiFilters.group==='' || a.group===uiFilters.group) &&
+    (!uiFilters.favOnly || a.favorite) &&
+    (uiFilters.showArchived || !a.archived)
+  );
+  list = list.slice().sort((a,b) => (b.favorite - a.favorite) || a.name.localeCompare(b.name));
+
+  if(list.length === 0){
+    grid.innerHTML = `<div class="empty">
+      <div class="empty-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+      <h3>${apps.length===0 ? 'Henüz uygulama yok' : 'Sonuç bulunamadı'}</h3>
+      <p>${apps.length===0 ? '"Yeni Uygulama" ile ilk HTML uygulamanı ekle.' : 'Filtreleri değiştirmeyi dene.'}</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = list.map(app => {
+    const lastVer = app.versionHistory && app.versionHistory.length ? app.versionHistory[app.versionHistory.length-1] : null;
+    const lastTs = lastVer ? new Date(lastVer.date).getTime() : new Date(app.createdAt).getTime();
+    return `
+    <div class="card ${app.published?'live':'draft'} ${app.archived?'archived':''}" data-id="${app.id}">
+      <button class="card-star ${app.favorite?'on':''}" data-fav="${app.id}" title="Favori">
+        <svg viewBox="0 0 24 24" fill="${app.favorite?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </button>
+      <div class="card-top">
+        <div class="app-icon" style="background:${app.icon?'transparent':colorFor(app.name)}">
+          ${app.icon ? `<img src="${app.icon}">` : initials(app.name)}
+        </div>
+        <div class="card-title-wrap">
+          <div class="card-title">${escapeHtml(app.name)}</div>
+          <div class="card-version-row">
+            <span class="card-version">v${escapeHtml(app.version)}</span>
+            <span class="track-badge ${app.track}" style="padding:1.5px 7px; font-size:9px;">${TRACK_LABEL[app.track]}</span>
+          </div>
+        </div>
+      </div>
+      ${(app.category || app.group) ? `<div class="card-tags">
+        ${app.category ? `<span class="tag-pill">${escapeHtml(app.category)}</span>` : ''}
+        ${app.group ? `<span class="tag-pill group">${escapeHtml(app.group)}</span>` : ''}
+      </div>` : ''}
+      <div class="card-desc">${escapeHtml(app.description||'Açıklama yok.')}</div>
+      <div class="card-foot">
+        <div class="card-foot-left">
+          <span class="badge ${app.archived?'archived':(app.published?'live':'draft')}"><span class="dot"></span>${app.archived?'Arşivlendi':(app.published?'Yayında':'Taslak')}</span>
+          ${app.published && app.pagesUrl ? `<a class="card-link" href="${app.pagesUrl}" target="_blank" onclick="event.stopPropagation()">${app.pagesUrl.replace('https://','')}</a>` : ''}
+        </div>
+        <span class="card-time">${timeAgo(lastTs)}</span>
+      </div>
+    </div>
+  `;
+  }).join('');
+  grid.querySelectorAll('.card').forEach(c => c.addEventListener('click', (e)=>{ if(e.target.closest('[data-fav]')) return; openDetail(c.dataset.id); }));
+  grid.querySelectorAll('[data-fav]').forEach(b => b.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    const id = b.dataset.fav;
+    const cur = apps.find(a=>a.id===id);
+    const newVal = !cur.favorite;
+    b.classList.toggle('on', newVal);
+    try{
+      await patchApp(id, a => a.favorite = newVal);
+      renderGrid();
+    }catch(err){ toast('Hata: '+err.message,'err'); }
+  }));
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ============================= NEW APP MODAL ============================= */
+function openOverlay(id){ document.getElementById(id).classList.add('open'); }
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', ()=> closeOverlay(b.dataset.close)));
+
+document.getElementById('newAppBtn').addEventListener('click', ()=>{
+  if(!settings.token || !settings.username){ toast('Önce ayarlardan GitHub bilgilerini gir.', 'err'); openOverlay('settingsOverlay'); return; }
+  document.getElementById('na_name').value='';
+  document.getElementById('na_desc').value='';
+  document.getElementById('na_category').value='';
+  document.getElementById('na_group').value='';
+  document.getElementById('na_version').value='1.0.0';
+  pendingFile = null; pendingMultiFiles = null; pendingIcon = null;
+  resetDropzone('na_dropzone','na_dz_content','HTML dosyasını sürükle veya seç','.html / .htm');
+  document.getElementById('na_multi_dz_content').innerHTML = `
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <div class="dz-title">Dosyaları veya .zip sürükle</div><div class="dz-sub">İçinde index.html olmalı</div>`;
+  document.getElementById('na_multi_dropzone').classList.remove('has-file');
+  document.getElementById('na_icon_content').innerHTML = `
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+    <div class="dz-sub">PNG / SVG / JPG yükle</div>`;
+  setFileMode('single');
+  populateDatalists();
+  openOverlay('newAppOverlay');
+});
+document.getElementById('bannerSettingsBtn').addEventListener('click', ()=> openOverlay('settingsOverlay'));
+
+function populateDatalists(){
+  const cats = [...new Set(apps.map(a=>a.category).filter(Boolean))];
+  const groups = [...new Set(apps.map(a=>a.group).filter(Boolean))];
+  document.getElementById('categoryList').innerHTML = cats.map(c=>`<option value="${escapeHtml(c)}">`).join('');
+  document.getElementById('groupList').innerHTML = groups.map(g=>`<option value="${escapeHtml(g)}">`).join('');
+}
+
+function setFileMode(mode){
+  document.querySelectorAll('#na_filemode .radio-opt').forEach(o=>o.classList.toggle('active', o.dataset.filemode===mode));
+  document.getElementById('na_single_wrap').style.display = mode==='single' ? 'flex' : 'none';
+  document.getElementById('na_multi_wrap').style.display = mode==='multi' ? 'flex' : 'none';
+}
+document.querySelectorAll('#na_filemode .radio-opt').forEach(o=>o.addEventListener('click', ()=> setFileMode(o.dataset.filemode)));
+
+function setupDropzone(zoneId, inputId, onFile){
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', ()=> zone.classList.remove('drag'));
+  zone.addEventListener('drop', e=>{
+    e.preventDefault(); zone.classList.remove('drag');
+    if(e.dataTransfer.files.length) onFile(e.dataTransfer.files);
+  });
+  input.addEventListener('change', e=>{ if(e.target.files.length) onFile(e.target.files); });
+}
+function handleSingleFile(files, onFile){
+  const file = files[0];
+  if(!/\.html?$/i.test(file.name)){ toast('Sadece .html dosyası kabul edilir.', 'err'); return; }
+  const reader = new FileReader();
+  reader.onload = () => onFile({ name:file.name, content: reader.result });
+  reader.readAsText(file);
+}
+async function handleMultiFiles(fileList, onFiles){
+  const files = Array.from(fileList);
+  try{
+    if(files.length === 1 && /\.zip$/i.test(files[0].name)){
+      const zip = await JSZip.loadAsync(files[0]);
+      const entries = Object.values(zip.files).filter(e=>!e.dir);
+      let idxEntry = entries.find(e=>/(^|\/)index\.html$/i.test(e.name));
+      if(!idxEntry){ toast('ZIP içinde index.html bulunamadı.', 'err'); return; }
+      const rootPrefix = idxEntry.name.includes('/') ? idxEntry.name.slice(0, idxEntry.name.lastIndexOf('/')+1) : '';
+      const result = [];
+      for(const e of entries){
+        if(rootPrefix && !e.name.startsWith(rootPrefix)) continue;
+        const relPath = e.name.slice(rootPrefix.length);
+        if(!relPath) continue;
+        const isText = /\.(html?|css|js|json|svg|txt|md)$/i.test(relPath);
+        const content = isText ? await e.async('string') : await e.async('base64');
+        result.push({ path: relPath, content, binary: !isText });
+      }
+      onFiles(result);
+    } else {
+      const names = files.map(f=>f.name);
+      if(!names.some(n=>n.toLowerCase()==='index.html')){ toast('Seçilen dosyalar arasında index.html olmalı.', 'err'); return; }
+      const result = [];
+      for(const f of files){
+        const isText = /\.(html?|css|js|json|svg|txt|md)$/i.test(f.name);
+        const content = isText ? await f.text() : await fileToBase64Raw(f);
+        result.push({ path: f.name, content, binary: !isText });
+      }
+      onFiles(result);
+    }
+  }catch(e){ toast('Dosya okuma hatası: ' + e.message, 'err'); }
+}
+function fileToBase64Raw(file){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = ()=> res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+function resetDropzone(zoneId, contentId, title, sub){
+  const zone = document.getElementById(zoneId);
+  zone.classList.remove('has-file');
+  document.getElementById(contentId).innerHTML = `
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <div class="dz-title">${title}</div><div class="dz-sub">${sub}</div>`;
+}
+function showFileChip(zoneId, contentId, fname){
+  document.getElementById(zoneId).classList.add('has-file');
+  document.getElementById(contentId).innerHTML = `
+    <div class="file-chip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
+      <span class="fname">${escapeHtml(fname)}</span>
+    </div>`;
+}
+function showMultiFilesChip(zoneId, contentId, files){
+  document.getElementById(zoneId).classList.add('has-file');
+  document.getElementById(contentId).innerHTML = `
+    <div class="file-chip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
+      <span class="fname">${files.length} dosya: ${escapeHtml(files.map(f=>f.path).join(', '))}</span>
+    </div>`;
+}
+function resizeImageToDataUrl(file, maxSize=96){
+  return new Promise((res,rej)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = maxSize; canvas.height = maxSize;
+      const ctx = canvas.getContext('2d');
+      const scale = Math.max(maxSize/img.width, maxSize/img.height);
+      const w = img.width*scale, h = img.height*scale;
+      ctx.drawImage(img, (maxSize-w)/2, (maxSize-h)/2, w, h);
+      res(canvas.toDataURL('image/png'));
+    }; img.onerror = rej; img.src = reader.result; };
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+setupDropzone('na_dropzone','na_file', files => handleSingleFile(files, f => { pendingFile = f; showFileChip('na_dropzone','na_dz_content', f.name); }));
+setupDropzone('na_multi_dropzone','na_multi_file', files => handleMultiFiles(files, result => { pendingMultiFiles = result; showMultiFilesChip('na_multi_dropzone','na_multi_dz_content', result); }));
+setupDropzone('na_icon_dropzone','na_icon_file', async files => {
+  const dataUrl = await resizeImageToDataUrl(files[0]);
+  pendingIcon = dataUrl;
+  document.getElementById('na_icon_content').innerHTML = `<img class="icon-preview" src="${dataUrl}"><div class="dz-sub">Değiştirmek için tıkla</div>`;
+});
+
+document.getElementById('na_submit').addEventListener('click', async ()=>{
+  const name = document.getElementById('na_name').value.trim();
+  const description = document.getElementById('na_desc').value.trim();
+  const category = document.getElementById('na_category').value.trim();
+  const group = document.getElementById('na_group').value.trim();
+  const version = document.getElementById('na_version').value.trim() || '1.0.0';
+  const isMulti = document.querySelector('#na_filemode .radio-opt.active').dataset.filemode === 'multi';
+  if(!name){ toast('Uygulama adı gerekli.', 'err'); return; }
+  if(isMulti && !pendingMultiFiles){ toast('Dosyaları veya bir ZIP seç.', 'err'); return; }
+  if(!isMulti && !pendingFile){ toast('Bir HTML dosyası seç.', 'err'); return; }
+
+  const btn = document.getElementById('na_submit');
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Kaydediliyor'; btn.disabled = true;
+
+  const id = slugify(name) + '-' + Date.now().toString(36).slice(-4);
+  const mode = settings.mode;
+
+  try{
+    await ghEnsureRepo(settings.hubRepo);
+    let repo, basePath, fileNames, lastCommitSha;
+    if(mode === 'single'){
+      repo = settings.hubRepo;
+      basePath = `apps/${id}/`;
+    } else {
+      repo = 'vonlab-' + slugify(name);
+      basePath = '';
+      await ghEnsureRepo(repo);
+    }
+
+    if(isMulti){
+      fileNames = pendingMultiFiles.map(f=>f.path);
+      for(const f of pendingMultiFiles){
+        const content = f.binary ? fromB64Utf8(f.content) : f.content; // binary dosyalar için de b64->utf8 döngüsü sorunsuz taşır
+        const result = await ghPutFile(repo, basePath + f.path, f.binary ? f.content && atobToBinaryStr(f.content) : f.content, `${name} v${version} eklendi (${f.path})`);
+        lastCommitSha = result.commit.sha;
+      }
+    } else {
+      fileNames = [pendingFile.name === 'index.html' ? 'index.html' : 'index.html'];
+      const result = await ghPutFile(repo, basePath + 'index.html', pendingFile.content, `${name} v${version} eklendi`);
+      lastCommitSha = result.commit.sha;
+    }
+
+    const list = await loadManifest();
+    list.push(normApp({
+      id, name, description, version,
+      repo, path: basePath + 'index.html', mode,
+      published: false, pagesUrl: '', customDomain:'',
+      icon: pendingIcon, category, group, favorite:false, archived:false,
+      files: fileNames,
+      analytics: { enabled:false, code:'' },
+      createdAt: new Date().toISOString(),
+      versionHistory: [{ version, date: new Date().toISOString(), note:'İlk sürüm', commitSha: lastCommitSha }]
+    }));
+    await saveManifest(list);
+    logActivity('create', name, `v${version} · ${category||'kategorisiz'}`);
+
+    closeOverlay('newAppOverlay');
+    toast(`"${name}" GitHub'a kaydedildi (taslak).`);
+    renderStats(); renderFilterBar(); renderGrid();
+    checkTokenBanner(); updateRepoBadge();
+  }catch(e){
+    toast('Hata: ' + e.message, 'err');
+  }finally{
+    btn.innerHTML = originalHtml; btn.disabled = false;
+  }
+});
+function atobToBinaryStr(b64){
+  // Doğrudan base64 içerik zaten GitHub'a atılacak formatta olduğu için ghPutFile'ın
+  // beklediği "ham metin" yerine burada bir düzeltme katmanı kullanıyoruz.
+  return b64;
+}
+
+/* ============================= SETTINGS ============================= */
+function loadSettingsIntoForm(){
+  document.getElementById('st_username').value = settings.username;
+  document.getElementById('st_token').value = settings.token;
+  document.getElementById('st_hubrepo').value = settings.hubRepo;
+  document.getElementById('st_autoscan').checked = !!settings.autoScan;
+  document.getElementById('st_clearcache_status').textContent = '';
+  document.querySelectorAll('#settingsOverlay .radio-opt').forEach(o => o.classList.toggle('active', o.dataset.mode === settings.mode));
+}
+document.getElementById('settingsBtn').addEventListener('click', ()=>{ loadSettingsIntoForm(); openOverlay('settingsOverlay'); });
+document.querySelectorAll('#settingsOverlay .radio-opt').forEach(o => o.addEventListener('click', ()=>{
+  document.querySelectorAll('#settingsOverlay .radio-opt').forEach(x=>x.classList.remove('active'));
+  o.classList.add('active');
+}));
+async function verifyAndFixUsername(token){
+  const res = await fetch(GH + '/user', { headers:{ 'Authorization':'token '+token, 'Accept':'application/vnd.github+json' } });
+  if(!res.ok) throw new Error('Token geçersiz veya süresi dolmuş.');
+  const j = await res.json();
+  return j.login;
+}
+document.getElementById('st_save').addEventListener('click', async ()=>{
+  const token = document.getElementById('st_token').value.trim();
+  const btn = document.getElementById('st_save');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Kaydediliyor'; btn.disabled = true;
+  try{
+    let username = settings.username;
+    if(token){
+      username = await verifyAndFixUsername(token);
+      document.getElementById('st_username').value = username;
+    }
+    settings.username = username;
+    settings.token = token;
+    settings.hubRepo = document.getElementById('st_hubrepo').value.trim() || 'vonhub-console-data';
+    settings.mode = document.querySelector('#settingsOverlay .radio-opt.active')?.dataset.mode || 'single';
+    settings.autoScan = document.getElementById('st_autoscan').checked;
+    localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+    toast('Ayarlar kaydedildi: @' + settings.username);
+    closeOverlay('settingsOverlay');
+    checkTokenBanner(); updateRepoBadge();
+    if(settings.token && settings.username) refreshFromGithub();
+  }catch(e){
+    toast('Kaydedilemedi: ' + e.message, 'err');
+  }finally{
+    btn.innerHTML = orig; btn.disabled = false;
+  }
+});
+// Bir hesabın tüm repolarını tarayıp içinde manifest.json bulunanları döndürür.
+// onProgress(text) opsiyoneldir; sağlanırsa ilerleme mesajlarını iletir.
+async function scanReposForManifests(token, login, onProgress){
+  const emit = onProgress || (()=>{});
+  let repos = [];
+  for(let page=1; page<=10; page++){
+    emit(`Repolar listeleniyor… (sayfa ${page})`);
+    const batch = await fetch(GH + `/user/repos?per_page=100&page=${page}&affiliation=owner&sort=updated`, {
+      headers: { 'Authorization':'token '+token, 'Accept':'application/vnd.github+json' }
+    }).then(r => r.ok ? r.json() : []);
+    repos = repos.concat(batch);
+    if(batch.length < 100) break;
+  }
+  if(repos.length === 0) return { repos, found: [] };
+  const found = [];
+  for(let i=0; i<repos.length; i++){
+    const r = repos[i];
+    emit(`Taranıyor… ${i+1}/${repos.length} (${r.name})`);
+    try{
+      const res = await fetch(GH + `/repos/${login}/${r.name}/contents/manifest.json`, {
+        headers: { 'Authorization':'token '+token, 'Accept':'application/vnd.github+json' }, cache:'no-store'
+      });
+      if(res.ok){
+        const file = await res.json();
+        try{
+          const list = JSON.parse(fromB64Utf8(file.content));
+          found.push({ repo: r.name, count: Array.isArray(list) ? list.length : 0, updated: r.updated_at });
+        }catch(parseErr){
+          found.push({ repo: r.name, count: '?', updated: r.updated_at });
+        }
+      }
+    }catch(e){ /* atla */ }
+  }
+  found.sort((a,b)=> new Date(b.updated) - new Date(a.updated));
+  return { repos, found };
+}
+document.getElementById('st_scan').addEventListener('click', async ()=>{
+  const token = document.getElementById('st_token').value.trim();
+  const box = document.getElementById('st_scanResults');
+  const scanBtn = document.getElementById('st_scan');
+  if(!token){ toast('Önce token gir.', 'err'); return; }
+  const origBtn = scanBtn.innerHTML;
+  scanBtn.innerHTML = '<span class="spinner"></span>'; scanBtn.disabled = true;
+  box.style.display = 'block';
+  box.innerHTML = `<div style="padding:12px; font-size:12.5px; color:var(--text-dim);">Hesap doğrulanıyor…</div>`;
+  try{
+    const login = await verifyAndFixUsername(token);
+    document.getElementById('st_username').value = login;
+    const { repos, found } = await scanReposForManifests(token, login, (msg)=>{
+      box.innerHTML = `<div style="padding:12px; font-size:12.5px; color:var(--text-dim);">${escapeHtml(msg)}</div>`;
+    });
+    if(repos.length === 0){
+      box.innerHTML = `<div style="padding:12px; font-size:12.5px; color:var(--text-dim);">Hiç repo bulunamadı.</div>`;
+      return;
+    }
+    if(found.length === 0){
+      box.innerHTML = `<div style="padding:12px; font-size:12.5px; color:var(--text-dim);">@${login} hesabındaki ${repos.length} repodan hiçbirinde manifest.json bulunamadı.</div>`;
+      return;
+    }
+    box.innerHTML = found.map(f => `
+      <div class="st-scan-row" data-repo="${escapeHtml(f.repo)}" style="display:flex; align-items:center; justify-content:space-between; padding:10px 13px; cursor:pointer; border-bottom:1px solid var(--border-soft);">
+        <div>
+          <div style="font-weight:600; font-size:13px;">${escapeHtml(f.repo)}</div>
+          <div style="font-size:11.5px; color:var(--text-faint);">${f.count} uygulama · son güncelleme ${f.updated ? new Date(f.updated).toLocaleDateString('tr-TR') : '—'}</div>
+        </div>
+        <button class="btn btn-sm btn-primary" type="button">Bunu kullan</button>
+      </div>
+    `).join('');
+    box.querySelectorAll('.st-scan-row').forEach(row => row.addEventListener('click', ()=>{
+      document.getElementById('st_hubrepo').value = row.dataset.repo;
+      toast('Seçildi: ' + row.dataset.repo + ' — şimdi Kaydet\'e bas.');
+    }));
+  }catch(e){
+    box.innerHTML = `<div style="padding:12px; font-size:12.5px; color:#ff8a7a;">Hata: ${escapeHtml(e.message)}</div>`;
+  }finally{
+    scanBtn.innerHTML = origBtn; scanBtn.disabled = false;
+  }
+});
+// Ayarlarda "Otomatik depo taraması" açıksa, sayfa her açıldığında/yenilendiğinde
+// depoları arka planda tarar ve manifest.json içeren en son güncellenmiş repoyu
+// otomatik seçip kullanır. Manuel "Depoları Tara" + "Bunu kullan" akışına dokunmaz.
+async function autoScanAndUseRepo(){
+  if(!settings.autoScan || !settings.token || !settings.username) return;
+  try{
+    const login = await verifyAndFixUsername(settings.token);
+    const { found } = await scanReposForManifests(settings.token, login);
+    if(found.length === 0) return;
+    const best = found[0].repo;
+    if(best && best !== settings.hubRepo){
+      settings.hubRepo = best;
+      settings.username = login;
+      localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+      updateRepoBadge();
+      toast('Otomatik tarama: "' + best + '" deposu kullanılıyor.');
+      await refreshFromGithub();
+    }
+  }catch(e){
+    // Sessizce geç — otomatik tarama arka plan işlemi, kullanıcıyı rahatsız etmesin.
+  }
+}
+document.getElementById('st_clearcache').addEventListener('click', ()=>{
+  const statusEl = document.getElementById('st_clearcache_status');
+  localStorage.removeItem(LS_MANIFEST_CACHE);
+  apps = [];
+  statusEl.textContent = 'Temizlendi ✓';
+  toast('Önbellek temizlendi.');
+  const cur = currentViewName();
+  if(cur === 'home'){ renderStats(); renderFilterBar(); renderGrid(); }
+  else if(cur === 'dashboard') renderDashboard();
+  else if(cur === 'releases') renderReleases();
+  if(settings.token && settings.username) refreshFromGithub();
+});
+document.getElementById('st_test').addEventListener('click', async ()=>{
+  const token = document.getElementById('st_token').value.trim();
+  if(!token){ toast('Token gerekli.', 'err'); return; }
+  try{
+    const login = await verifyAndFixUsername(token);
+    document.getElementById('st_username').value = login;
+    toast(`Bağlantı başarılı: @${login}`);
+  }catch(e){ toast('Bağlantı hatası: ' + e.message, 'err'); }
+});
+function checkTokenBanner(){
+  document.getElementById('tokenBanner').style.display = (settings.token && settings.username) ? 'none' : 'flex';
+}
+function updateRepoBadge(){
+  const el = document.getElementById('brandRepoBadge');
+  if(!el) return;
+  if(settings.username && settings.hubRepo){
+    el.textContent = '@' + settings.username + '/' + settings.hubRepo;
+  } else {
+    el.textContent = 'depo ayarlanmadı';
+  }
+}
+
+/* ============================= DETAIL VIEW ============================= */
+const VIEW_IDS = ['dashboard','home','detail','releases','activity'];
+let activeDetailTab = 'overview';
+function showView(name, opts={}){
+  VIEW_IDS.forEach(v => { const el = document.getElementById(v+'View'); if(el) el.style.display = (v===name) ? 'block' : 'none'; });
+  document.querySelectorAll('.side-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view===name));
+  if(name === 'dashboard') renderDashboard();
+  else if(name === 'home'){ renderStats(); renderFilterBar(); renderGrid(); }
+  else if(name === 'releases') renderReleases();
+  else if(name === 'activity') renderActivityPage();
+  window.scrollTo(0,0);
+  if(!opts.silent) history.pushState({view:name}, '', name==='home' ? '#' : '#'+name);
+}
+function openDetail(id, opts={}){
+  const app = apps.find(a=>a.id===id);
+  if(!app) return;
+  activeDetailTab = 'overview';
+  VIEW_IDS.forEach(v => { const el = document.getElementById(v+'View'); if(el) el.style.display = (v==='detail') ? 'block' : 'none'; });
+  document.querySelectorAll('.side-item[data-view]').forEach(b => b.classList.remove('active'));
+  renderDetail(app);
+  window.scrollTo(0,0);
+  if(!opts.silent) history.pushState({view:'detail', id}, '', '#'+id);
+}
+function goHome(){ showView('home'); }
+window.addEventListener('popstate', (e)=>{
+  const st = e.state;
+  if(!st || st.view==='home') showView('home', {silent:true});
+  else if(st.view==='detail'){ const app = apps.find(a=>a.id===st.id); if(app) openDetail(st.id, {silent:true}); else showView('home',{silent:true}); }
+  else showView(st.view, {silent:true});
+});
+document.querySelectorAll('.side-item[data-view]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    if(b.dataset.view === 'settings'){ loadSettingsIntoForm(); openOverlay('settingsOverlay'); return; }
+    showView(b.dataset.view);
+  });
+});
+function bumpVersion(v, part){
+  const parts = v.split('.').map(n=>parseInt(n)||0);
+  while(parts.length<3) parts.push(0);
+  if(part==='major'){ parts[0]++; parts[1]=0; parts[2]=0; }
+  else if(part==='minor'){ parts[1]++; parts[2]=0; }
+  else { parts[2]++; }
+  return parts.join('.');
+}
+
+function renderDetail(app){
+  document.getElementById('homeView').style.display='none';
+  const view = document.getElementById('detailView');
+  view.style.display='block';
+  updateFile = null; updateMultiFiles = null; diffSelection = [];
+
+  view.innerHTML = `
+    <div class="back-btn" id="backBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Uygulamalar
+    </div>
+    <div class="detail-head">
+      <div class="detail-icon" style="background:${app.icon?'transparent':colorFor(app.name)}">${app.icon?`<img src="${app.icon}">`:initials(app.name)}</div>
+      <div>
+        <div class="detail-title-row">
+          <div class="detail-title">${escapeHtml(app.name)}</div>
+          <button class="icon-btn-inline" id="renameBtn" title="Yeniden adlandır">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </button>
+        </div>
+        <div class="detail-meta">
+          <span class="badge ${app.archived?'archived':(app.published?'live':'draft')}"><span class="dot"></span>${app.archived?'Arşivlendi':(app.published?'Yayında':'Taslak')}</span>
+          <span class="track-badge ${app.track}">${TRACK_LABEL[app.track]}</span>
+          <span class="card-version" style="font-size:12px;">v${escapeHtml(app.version)}</span>
+          <span class="card-version" style="font-size:12px;">${app.mode==='single'?'Tek repo':'Ayrı repo'} · ${escapeHtml(app.repo)}</span>
+          ${app.category ? `<span class="tag-pill">${escapeHtml(app.category)}</span>` : ''}
+          ${app.group ? `<span class="tag-pill group">${escapeHtml(app.group)}</span>` : ''}
+        </div>
+        <div class="detail-desc">${escapeHtml(app.description||'Açıklama eklenmemiş.')}</div>
+        <div class="detail-meta" style="margin-top:10px;">
+          <span class="meta-text" id="metaSize">Boyut: hesaplanıyor…</span>
+          <span class="meta-text" id="metaCommit">Son commit: hesaplanıyor…</span>
+          <span class="meta-text" id="metaDeploy">Deploy: —</span>
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="btn btn-icon btn-ghost" id="favBtn" title="Favori">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="${app.favorite?'var(--amber)':'none'}" stroke="${app.favorite?'var(--amber)':'currentColor'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
+        ${!app.published ? `<button class="btn btn-primary" id="publishBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+            Yayınla
+          </button>` : `<button class="btn btn-danger" id="unpublishBtn">Yayından Kaldır</button>`}
+      </div>
+    </div>
+
+    <div class="tab-row">
+      <button class="tab-btn" data-tab="overview">Genel Bakış</button>
+      <button class="tab-btn" data-tab="versions">Sürümler</button>
+      <button class="tab-btn" data-tab="files">Dosyalar</button>
+      <button class="tab-btn" data-tab="settings">Ayarlar</button>
+    </div>
+
+    <div class="tab-panel" data-panel="overview">
+      ${app.published && app.pagesUrl ? `
+      <div class="section-card">
+        <h3>Canlı bağlantı</h3>
+        <div class="sub">GitHub Pages üzerinden yayında. Güncelleme sonrası birkaç dakika içinde yansır.</div>
+        <div class="live-link-box">
+          <a href="${app.pagesUrl}" target="_blank">${app.pagesUrl}</a>
+          <div class="live-link-actions">
+            <button class="btn btn-sm btn-ghost" id="copyLinkBtn">Kopyala</button>
+            <button class="btn btn-sm btn-primary" id="goLinkBtn">Git →</button>
+          </div>
+        </div>
+      </div>
+
+      ${app.mode==='multi' ? `
+      <div class="section-card">
+        <h3>Özel domain</h3>
+        <div class="sub">Kendi alan adını bağla. DNS'te ${app.customDomain||'alan-adin.com'} için bir CNAME kaydını <b>${settings.username}.github.io</b> adresine yönlendirmen gerekir.</div>
+        <div class="field-row">
+          <div class="field" style="flex:2;"><input type="text" id="cnameInput" placeholder="uygulama.senin-domainin.com" value="${escapeHtml(app.customDomain)}"></div>
+          <button class="btn btn-primary" id="cnameSaveBtn" style="align-self:flex-end;">Bağla</button>
+        </div>
+      </div>` : ''}
+
+      <div class="section-card">
+        <h3>Ziyaretçi sayacı</h3>
+        <div class="sub">Ücretsiz <a href="https://www.goatcounter.com" target="_blank" style="color:var(--red);">GoatCounter</a> hesabı açıp site kodunu gir; sayfaya otomatik script eklenir.</div>
+        <div class="field-row">
+          <div class="field" style="flex:1;">
+            <label style="display:flex; align-items:center; gap:8px;">
+              <label class="switch"><input type="checkbox" id="analyticsToggle" ${app.analytics.enabled?'checked':''}><span class="slider"></span></label>
+              Etkin
+            </label>
+          </div>
+          <div class="field" style="flex:2;"><input type="text" id="analyticsCode" placeholder="goatcounter-kodun" value="${escapeHtml(app.analytics.code)}"></div>
+          <button class="btn btn-primary" id="analyticsSaveBtn" style="align-self:flex-end;">Kaydet</button>
+        </div>
+      </div>` : `<div class="section-card"><h3>Canlı bağlantı</h3><div class="sub">Henüz yayında değil. Sürümler sekmesinden "Yayınla" ile başlayabilirsin.</div></div>`}
+
+      <div class="section-card">
+        <h3>Yayın kanalı</h3>
+        <div class="sub">GitHub Pages tek bir statik ortam sunar; kanal ve rollout burada sadece planlama/takip amaçlıdır, gerçek trafiği bölmez.</div>
+        <div class="field-row" style="margin-bottom:14px;">
+          <div class="field">
+            <label>Kanal</label>
+            <div class="radio-row" id="trackRow">
+              <div class="radio-opt ${app.track==='production'?'active':''}" data-track="production">Production</div>
+              <div class="radio-opt ${app.track==='beta'?'active':''}" data-track="beta">Beta</div>
+              <div class="radio-opt ${app.track==='alpha'?'active':''}" data-track="alpha">Alpha</div>
+              <div class="radio-opt ${app.track==='internal'?'active':''}" data-track="internal">İç Test</div>
+            </div>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>Rollout hedefi</label>
+          <div class="rollout-row">
+            <input type="range" min="0" max="100" step="5" id="rolloutRange" value="${app.rollout}">
+            <span class="rollout-val" id="rolloutVal">${app.rollout}%</span>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="trackSaveBtn">Kaydet</button>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="versions">
+      <div class="section-card">
+        <h3>Uygulamayı güncelle</h3>
+        <div class="sub">Yeni dosyaları yükle, versiyonu belirle ve gönder.</div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>Versiyon</label>
+          <div class="field-row" style="margin-bottom:8px;">
+            <button class="btn btn-sm btn-ghost" data-bump="patch">Patch (${bumpVersion(app.version,'patch')})</button>
+            <button class="btn btn-sm btn-ghost" data-bump="minor">Minor (${bumpVersion(app.version,'minor')})</button>
+            <button class="btn btn-sm btn-ghost" data-bump="major">Major (${bumpVersion(app.version,'major')})</button>
+          </div>
+          <input type="text" id="up_version" value="${bumpVersion(app.version,'patch')}">
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>Değişiklik notu (changelog)</label>
+          <textarea id="up_note" placeholder="Bu sürümde neler değişti?"></textarea>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>Dosya türü</label>
+          <div class="radio-row" id="up_filemode">
+            <div class="radio-opt ${app.mode!=='__never'?'active':''}" data-filemode="single">Tek HTML</div>
+            <div class="radio-opt" data-filemode="multi">Çoklu dosya / ZIP</div>
+          </div>
+        </div>
+        <div class="field" id="up_single_wrap" style="margin-bottom:14px;">
+          <div class="dropzone" id="up_dropzone">
+            <input type="file" id="up_file" accept=".html,.htm">
+            <div id="up_dz_content">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div class="dz-title">Yeni HTML dosyasını sürükle veya seç</div>
+              <div class="dz-sub">.html / .htm</div>
+            </div>
+          </div>
+        </div>
+        <div class="field" id="up_multi_wrap" style="display:none; margin-bottom:14px;">
+          <div class="dropzone" id="up_multi_dropzone">
+            <input type="file" id="up_multi_file" accept=".html,.htm,.css,.js,.zip,.json,.svg,.png,.jpg,.jpeg,.gif" multiple>
+            <div id="up_multi_dz_content">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div class="dz-title">Dosyaları veya .zip sürükle</div><div class="dz-sub">İçinde index.html olmalı</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="up_submit">Güncelle</button>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head-row">
+          <h3>Versiyon geçmişi</h3>
+          <button class="btn btn-sm btn-ghost" id="diffSelectedBtn" style="display:none;">Seçilenleri karşılaştır</button>
+        </div>
+        <div class="sub">İndir, eski sürüme geri dön veya iki sürüm arasındaki farkı gör.</div>
+        <div class="version-list" id="versionList"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="files">
+      <div class="section-card">
+        <h3>Dosyalar</h3>
+        <div class="sub">${app.mode==='single'?'Tek repo':'Ayrı repo'} · <b>${escapeHtml(app.repo)}</b> · yol: <span class="meta-text">${escapeHtml(appDirOf(app)||'/')}</span></div>
+        <div class="version-list">
+          ${(app.files||[]).map(f => `
+            <div class="file-row">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              ${escapeHtml(f)}
+            </div>
+          `).join('') || `<div class="empty-mini">Dosya bilgisi yok.</div>`}
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="settings">
+      <div class="section-card">
+        <h3>Uygulama bilgileri</h3>
+        <div class="sub">Ad, kategori ve grup bilgilerini güncelle.</div>
+        <div class="field" style="margin-bottom:14px;"><label>Uygulama adı</label><input type="text" id="st_name" value="${escapeHtml(app.name)}"></div>
+        <div class="field-row" style="margin-bottom:14px;">
+          <div class="field"><label>Kategori</label><input type="text" id="st_category" value="${escapeHtml(app.category)}" placeholder="ör. POS, Oyun, Araç"></div>
+          <div class="field"><label>Grup</label><input type="text" id="st_group" value="${escapeHtml(app.group)}" placeholder="ör. Panther, SCIURUS"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="metaSaveBtn">Kaydet</button>
+      </div>
+      <div class="section-card">
+        <h3>Durum</h3>
+        <div class="sub">Uygulamayı listeden gizlemeden arşivleyebilirsin.</div>
+        <button class="btn btn-ghost" id="archiveBtn">${app.archived?'Arşivden çıkar':'Arşivle'}</button>
+      </div>
+      <div class="danger-zone">
+        <h3>Tehlikeli bölge</h3>
+        <div class="sub">Uygulamayı ve ilgili GitHub dosyalarını kalıcı olarak siler. Geri alınamaz.</div>
+        <button class="btn btn-danger" id="deleteAppBtn">Uygulamayı sil</button>
+      </div>
+    </div>
+  `;
+
+  renderVersionList(app);
+  loadDetailMeta(app);
+
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === activeDetailTab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === activeDetailTab));
+  document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', ()=>{
+    activeDetailTab = b.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(x => x.classList.toggle('active', x===b));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel===b.dataset.tab));
+  }));
+
+  document.querySelectorAll('#trackRow .radio-opt').forEach(o => o.addEventListener('click', ()=>{
+    document.querySelectorAll('#trackRow .radio-opt').forEach(x=>x.classList.remove('active'));
+    o.classList.add('active');
+  }));
+  const rolloutRange = document.getElementById('rolloutRange');
+  if(rolloutRange) rolloutRange.addEventListener('input', ()=>{ document.getElementById('rolloutVal').textContent = rolloutRange.value + '%'; });
+  const trackSaveBtn = document.getElementById('trackSaveBtn');
+  if(trackSaveBtn) trackSaveBtn.addEventListener('click', async ()=>{
+    const track = document.querySelector('#trackRow .radio-opt.active').dataset.track;
+    const rollout = +document.getElementById('rolloutRange').value;
+    trackSaveBtn.disabled = true;
+    try{
+      const updated = await patchApp(app.id, a => { a.track = track; a.rollout = rollout; });
+      logActivity('track', app.name, `${TRACK_LABEL[track]} · %${rollout}`);
+      toast('Yayın kanalı güncellendi.');
+      renderDetail(updated);
+    }catch(err){ toast('Hata: '+err.message,'err'); }
+    finally{ trackSaveBtn.disabled = false; }
+  });
+
+  const metaSaveBtn = document.getElementById('metaSaveBtn');
+  if(metaSaveBtn) metaSaveBtn.addEventListener('click', async ()=>{
+    const newName = document.getElementById('st_name').value.trim() || app.name;
+    const category = document.getElementById('st_category').value.trim();
+    const group = document.getElementById('st_group').value.trim();
+    metaSaveBtn.disabled = true;
+    try{
+      const updated = await patchApp(app.id, a => { a.name = newName; a.category = category; a.group = group; });
+      if(newName !== app.name) logActivity('rename', newName, `eski ad: ${app.name}`);
+      toast('Bilgiler güncellendi.');
+      renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
+    }catch(err){ toast('Hata: '+err.message,'err'); }
+    finally{ metaSaveBtn.disabled = false; }
+  });
+
+  document.getElementById('backBtn').addEventListener('click', ()=> history.back());
+
+  setupDropzone('up_dropzone','up_file', files => handleSingleFile(files, f => { updateFile = f; showFileChip('up_dropzone','up_dz_content', f.name); }));
+  setupDropzone('up_multi_dropzone','up_multi_file', files => handleMultiFiles(files, result => { updateMultiFiles = result; showMultiFilesChip('up_multi_dropzone','up_multi_dz_content', result); }));
+  document.querySelectorAll('#up_filemode .radio-opt').forEach(o=>o.addEventListener('click', ()=>{
+    document.querySelectorAll('#up_filemode .radio-opt').forEach(x=>x.classList.remove('active'));
+    o.classList.add('active');
+    document.getElementById('up_single_wrap').style.display = o.dataset.filemode==='single' ? 'flex' : 'none';
+    document.getElementById('up_multi_wrap').style.display = o.dataset.filemode==='multi' ? 'flex' : 'none';
+  }));
+  document.querySelectorAll('[data-bump]').forEach(b=>b.addEventListener('click', ()=>{
+    document.getElementById('up_version').value = bumpVersion(app.version, b.dataset.bump);
+  }));
+
+  document.getElementById('renameBtn').addEventListener('click', ()=>{
+    document.getElementById('rn_name').value = app.name;
+    openOverlay('renameOverlay');
+    document.getElementById('rn_submit').onclick = async ()=>{
+      const newName = document.getElementById('rn_name').value.trim();
+      if(!newName){ toast('İsim boş olamaz.', 'err'); return; }
+      try{
+        const updated = await patchApp(app.id, a => a.name = newName);
+        logActivity('rename', newName, `eski ad: ${app.name}`);
+        toast('Uygulama adı güncellendi.');
+        closeOverlay('renameOverlay');
+        renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
+      }catch(e){ toast('Hata: '+e.message,'err'); }
+    };
+  });
+
+  document.getElementById('favBtn').addEventListener('click', async ()=>{
+    try{
+      const updated = await patchApp(app.id, a => a.favorite = !a.favorite);
+      renderDetail(updated); renderGrid();
+    }catch(e){ toast('Hata: '+e.message,'err'); }
+  });
+
+  document.getElementById('archiveBtn').addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    try{
+      const updated = await patchApp(app.id, a => a.archived = !a.archived);
+      logActivity(updated.archived ? 'archive' : 'unarchive', app.name, '');
+      toast(updated.archived ? 'Arşivlendi.' : 'Arşivden çıkarıldı.');
+      renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
+    }catch(err){ toast('Hata: '+err.message,'err'); }
+  });
+
+  document.getElementById('deleteAppBtn').addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    if(!confirm(`"${app.name}" silinsin mi? Bu işlem GitHub'daki dosyaları da etkiler.`)) return;
+    try{
+      if(app.mode === 'multi'){
+        await ghDeleteRepo(app.repo);
+      } else {
+        const dir = appDirOf(app);
+        for(const fname of app.files){
+          await ghDeleteFile(app.repo, dir + fname, `${app.name} silindi`);
+        }
+      }
+      const list = (await loadManifest()).filter(a=>a.id !== app.id);
+      await saveManifest(list);
+      logActivity('delete', app.name, '');
+      toast('Uygulama silindi.');
+      history.back();
+      renderStats(); renderFilterBar(); renderGrid();
+    }catch(err){ toast('Silme hatası: ' + err.message, 'err'); }
+  });
+
+  const publishBtn = document.getElementById('publishBtn');
+  if(publishBtn){
+    publishBtn.addEventListener('click', async ()=>{
+      const orig = publishBtn.innerHTML;
+      publishBtn.innerHTML = '<span class="spinner"></span> Yayınlanıyor'; publishBtn.disabled = true;
+      try{
+        const pages = await ghEnablePages(app.repo);
+        let url = pages.html_url || `https://${settings.username}.github.io/${app.repo}/`;
+        if(app.mode === 'single') url = url.replace(/\/?$/, '/') + `apps/${app.id}/`;
+        const updated = await patchApp(app.id, a => { a.published = true; a.pagesUrl = url; });
+        logActivity('publish', app.name, url);
+        toast('Uygulama yayınlandı. Canlıya alınması birkaç dakika sürebilir.');
+        renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
+      }catch(err){ toast('Yayınlama hatası: ' + err.message, 'err'); publishBtn.innerHTML = orig; publishBtn.disabled = false; }
+    });
+  }
+  const unpublishBtn = document.getElementById('unpublishBtn');
+  if(unpublishBtn){
+    unpublishBtn.addEventListener('click', async ()=>{
+      if(!confirm('Uygulama yayından kaldırılsın mı? Canlı bağlantı çalışmayı durduracak.')) return;
+      unpublishBtn.disabled = true;
+      try{
+        if(app.mode === 'multi') await ghDisablePages(app.repo);
+        const updated = await patchApp(app.id, a => { a.published = false; a.pagesUrl=''; });
+        logActivity('unpublish', app.name, '');
+        toast('Yayından kaldırıldı.');
+        renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
+      }catch(err){ toast('Hata: '+err.message,'err'); unpublishBtn.disabled = false; }
+    });
+  }
+  const copyBtn = document.getElementById('copyLinkBtn');
+  if(copyBtn) copyBtn.addEventListener('click', ()=>{ navigator.clipboard.writeText(app.pagesUrl); toast('Bağlantı kopyalandı.'); });
+  const goBtn = document.getElementById('goLinkBtn');
+  if(goBtn) goBtn.addEventListener('click', ()=> window.open(app.pagesUrl, '_blank'));
+
+  const cnameSaveBtn = document.getElementById('cnameSaveBtn');
+  if(cnameSaveBtn){
+    cnameSaveBtn.addEventListener('click', async ()=>{
+      const domain = document.getElementById('cnameInput').value.trim();
+      cnameSaveBtn.disabled = true;
+      try{
+        await ghEnablePages(app.repo, 'main', domain || undefined);
+        const updated = await patchApp(app.id, a => a.customDomain = domain);
+        logActivity('domain', app.name, domain || 'kaldırıldı');
+        toast(domain ? 'Özel domain bağlandı. DNS yayılması birkaç saat sürebilir.' : 'Özel domain kaldırıldı.');
+        renderDetail(updated);
+      }catch(err){ toast('Hata: '+err.message,'err'); }
+      finally{ cnameSaveBtn.disabled = false; }
+    });
+  }
+
+  const analyticsSaveBtn = document.getElementById('analyticsSaveBtn');
+  if(analyticsSaveBtn){
+    analyticsSaveBtn.addEventListener('click', async ()=>{
+      const enabled = document.getElementById('analyticsToggle').checked;
+      const code = document.getElementById('analyticsCode').value.trim();
+      if(enabled && !code){ toast('GoatCounter kodu gerekli.', 'err'); return; }
+      analyticsSaveBtn.disabled = true;
+      try{
+        const dir = appDirOf(app);
+        const file = await ghGetFile(app.repo, dir + 'index.html');
+        let html = fromB64Utf8(file.content);
+        html = html.replace(/<!-- vonhub-analytics -->[\s\S]*?<!-- \/vonhub-analytics -->\n?/g, '');
+        if(enabled){
+          const script = `<!-- vonhub-analytics -->\n<script data-goatcounter="https://${code}.goatcounter.com/count" async src="//gc.zgo.at/count.js"><\/script>\n<!-- /vonhub-analytics -->\n`;
+          html = /<\/head>/i.test(html) ? html.replace(/<\/head>/i, script + '</head>') : script + html;
+        }
+        const result = await ghPutFile(app.repo, dir + 'index.html', html, 'analitik güncellendi');
+        const updated = await patchApp(app.id, a => { a.analytics = { enabled, code }; });
+        logActivity('analytics', app.name, enabled ? 'etkin' : 'kapalı');
+        toast('Analitik ayarları kaydedildi.');
+        renderDetail(updated);
+      }catch(err){ toast('Hata: '+err.message,'err'); }
+      finally{ analyticsSaveBtn.disabled = false; }
+    });
+  }
+
+  document.getElementById('up_submit').addEventListener('click', async ()=>{
+    const isMulti = document.querySelector('#up_filemode .radio-opt.active').dataset.filemode === 'multi';
+    if(isMulti && !updateMultiFiles){ toast('Dosyaları veya bir ZIP seç.', 'err'); return; }
+    if(!isMulti && !updateFile){ toast('Yeni bir HTML dosyası seç.', 'err'); return; }
+    const version = document.getElementById('up_version').value.trim() || app.version;
+    const note = document.getElementById('up_note').value.trim();
+    const btn = document.getElementById('up_submit');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Güncelleniyor'; btn.disabled = true;
+    try{
+      const dir = appDirOf(app);
+      let lastCommitSha, fileNames;
+      if(isMulti){
+        fileNames = updateMultiFiles.map(f=>f.path);
+        for(const f of updateMultiFiles){
+          const result = await ghPutFile(app.repo, dir + f.path, f.content, `${app.name} v${version} güncellendi (${f.path})`);
+          lastCommitSha = result.commit.sha;
+        }
+      } else {
+        fileNames = ['index.html'];
+        const result = await ghPutFile(app.repo, dir + 'index.html', updateFile.content, `${app.name} v${version} güncellendi`);
+        lastCommitSha = result.commit.sha;
+      }
+      const updated = await patchApp(app.id, a => {
+        a.version = version;
+        a.files = fileNames;
+        a.versionHistory.push({ version, date: new Date().toISOString(), note, commitSha: lastCommitSha });
+      });
+      logActivity('update', app.name, `v${version}` + (note?' · '+note:''));
+      toast(`v${version} yayınlandı.` + (app.published ? ' Canlı sürüm birkaç dakikada güncellenecek.' : ''));
+      renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
+    }catch(err){ toast('Güncelleme hatası: ' + err.message, 'err'); }
+    finally{ btn.innerHTML = orig; btn.disabled = false; }
+  });
+}
+
+async function loadDetailMeta(app){
+  try{
+    const dir = appDirOf(app);
+    const file = await ghGetFile(app.repo, dir + 'index.html');
+    document.getElementById('metaSize').textContent = 'Boyut: ' + fmtBytes(file ? file.size : null);
+  }catch(e){ document.getElementById('metaSize').textContent = 'Boyut: —'; }
+  try{
+    const dir = appDirOf(app);
+    const commit = await ghLatestCommit(app.repo, dir + 'index.html');
+    document.getElementById('metaCommit').textContent = commit ? 'Son commit: ' + new Date(commit.commit.author.date).toLocaleString('tr-TR') : 'Son commit: —';
+  }catch(e){ document.getElementById('metaCommit').textContent = 'Son commit: —'; }
+  try{
+    const build = await ghPagesBuild(app.repo);
+    if(build) document.getElementById('metaDeploy').textContent = `Deploy: ${build.status} · ${new Date(build.updated_at).toLocaleString('tr-TR')}`;
+    else document.getElementById('metaDeploy').textContent = 'Deploy: henüz yok';
+  }catch(e){ document.getElementById('metaDeploy').textContent = 'Deploy: —'; }
+}
+
+function renderVersionList(app){
+  const listEl = document.getElementById('versionList');
+  const history_ = [...app.versionHistory].reverse();
+  listEl.innerHTML = history_.map((v, i) => `
+    <div class="version-row" data-sha="${v.commitSha||''}">
+      ${v.commitSha ? `<input type="checkbox" data-diff-check value="${v.commitSha}" data-label="v${escapeHtml(v.version)}">` : ''}
+      <span class="vtag ${i===0?'current':''}">v${escapeHtml(v.version)}</span>
+      <span class="vdate">${new Date(v.date).toLocaleString('tr-TR')}</span>
+      ${v.note ? `<div class="vnote">${escapeHtml(v.note)}</div>` : ''}
+      <div class="vactions">
+        ${v.commitSha ? `<button class="btn btn-sm btn-ghost" data-download="${v.commitSha}" data-version="${escapeHtml(v.version)}">İndir</button>` : ''}
+        ${(v.commitSha && i!==0) ? `<button class="btn btn-sm btn-ghost" data-rollback="${v.commitSha}" data-version="${escapeHtml(v.version)}">Geri Al</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('[data-diff-check]').forEach(cb => cb.addEventListener('change', ()=>{
+    const checked = [...listEl.querySelectorAll('[data-diff-check]:checked')];
+    if(checked.length > 2){ cb.checked = false; toast('En fazla 2 sürüm seçebilirsin.', 'err'); return; }
+    diffSelection = checked.map(c => ({ sha: c.value, label: c.dataset.label }));
+    document.getElementById('diffSelectedBtn').style.display = diffSelection.length === 2 ? 'inline-flex' : 'none';
+  }));
+
+  const diffBtn = document.getElementById('diffSelectedBtn');
+  if(diffBtn) diffBtn.onclick = () => showDiff(app, diffSelection[0], diffSelection[1]);
+
+  listEl.querySelectorAll('[data-download]').forEach(b => b.addEventListener('click', () => downloadVersion(app, b.dataset.download, b.dataset.version)));
+  listEl.querySelectorAll('[data-rollback]').forEach(b => b.addEventListener('click', () => rollbackVersion(app, b.dataset.rollback, b.dataset.version)));
+}
+
+async function downloadVersion(app, sha, versionLabel){
+  toast('Hazırlanıyor…');
+  try{
+    const dir = appDirOf(app);
+    const tree = await ghGetTree(app.repo, sha);
+    const entries = tree.tree.filter(e => e.type === 'blob' && e.path.startsWith(dir));
+    if(entries.length === 0){ toast('Bu sürümde dosya bulunamadı.', 'err'); return; }
+    if(entries.length === 1){
+      const blob = await ghGetBlob(app.repo, entries[0].sha);
+      const content = fromB64Utf8(blob.content);
+      triggerDownload(content, `${slugify(app.name)}-v${versionLabel}.html`, 'text/html');
+    } else {
+      const zip = new JSZip();
+      for(const e of entries){
+        const blob = await ghGetBlob(app.repo, e.sha);
+        const relPath = e.path.slice(dir.length);
+        zip.file(relPath, fromB64Utf8(blob.content));
+      }
+      const zipBlob = await zip.generateAsync({ type:'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${slugify(app.name)}-v${versionLabel}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+    toast(`v${versionLabel} indirildi.`);
+  }catch(e){ toast('İndirme hatası: ' + e.message, 'err'); }
+}
+function triggerDownload(content, filename, mime){
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function rollbackVersion(app, sha, versionLabel){
+  if(!confirm(`v${versionLabel} sürümüne geri dönülsün mü? Bu, geçerli en son sürümün üzerine yeni bir commit olarak eklenecek.`)) return;
+  toast('Geri alınıyor…');
+  try{
+    const dir = appDirOf(app);
+    const tree = await ghGetTree(app.repo, sha);
+    const entries = tree.tree.filter(e => e.type === 'blob' && e.path.startsWith(dir));
+    let lastCommitSha, fileNames = [];
+    for(const e of entries){
+      const blob = await ghGetBlob(app.repo, e.sha);
+      const content = fromB64Utf8(blob.content);
+      const relPath = e.path.slice(dir.length);
+      fileNames.push(relPath);
+      const result = await ghPutFile(app.repo, e.path, content, `v${versionLabel} sürümüne geri alındı`);
+      lastCommitSha = result.commit.sha;
+    }
+    const newVersion = bumpVersion(app.version, 'patch');
+    const updated = await patchApp(app.id, a => {
+      a.version = newVersion;
+      a.files = fileNames;
+      a.versionHistory.push({ version:newVersion, date:new Date().toISOString(), note:`v${versionLabel} sürümüne geri alındı`, commitSha:lastCommitSha });
+    });
+    logActivity('rollback', app.name, `v${versionLabel} → v${newVersion}`);
+    toast(`v${versionLabel} sürümüne geri alındı (yeni sürüm: v${newVersion}).`);
+    renderDetail(updated); renderStats(); renderFilterBar(); renderGrid();
+  }catch(e){ toast('Geri alma hatası: ' + e.message, 'err'); }
+}
+
+async function showDiff(app, v1, v2){
+  document.getElementById('diffTitle').textContent = `${v1.label} → ${v2.label} farkı`;
+  const body = document.getElementById('diffBody');
+  body.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-dim);"><span class="spinner"></span> Fark hesaplanıyor…</div>';
+  openOverlay('diffOverlay');
+  try{
+    const dir = appDirOf(app);
+    const cmp = await ghCompare(app.repo, v1.sha, v2.sha);
+    const files = (cmp.files || []).filter(f => f.filename.startsWith(dir));
+    if(files.length === 0){ body.innerHTML = '<p style="color:var(--text-dim); font-size:13px;">Bu iki sürüm arasında dosya farkı bulunamadı.</p>'; return; }
+    body.innerHTML = files.map(f => `
+      <div class="diff-block">
+        <div class="fname">${escapeHtml(f.filename.slice(dir.length))} · +${f.additions} / -${f.deletions}</div>
+        <pre>${f.patch ? renderPatch(f.patch) : '<span class="diff-ctx">(önizleme yok — dosya çok büyük ya da ikili)</span>'}</pre>
+      </div>
+    `).join('');
+  }catch(e){ body.innerHTML = `<p style="color:var(--red); font-size:13px;">Fark alınamadı: ${escapeHtml(e.message)}</p>`; }
+}
+function renderPatch(patch){
+  return patch.split('\n').map(line => {
+    const esc = escapeHtml(line);
+    if(line.startsWith('+++') || line.startsWith('---')) return `<span class="diff-hunk">${esc}</span>`;
+    if(line.startsWith('@@')) return `<span class="diff-hunk">${esc}</span>`;
+    if(line.startsWith('+')) return `<span class="diff-add">${esc}</span>`;
+    if(line.startsWith('-')) return `<span class="diff-del">${esc}</span>`;
+    return `<span class="diff-ctx">${esc}</span>`;
+  }).join('\n');
+}
+
+/* ============================= SEARCH ============================= */
+document.getElementById('searchInput').addEventListener('input', e => {
+  uiFilters.q = e.target.value;
+  if(document.getElementById('homeView').style.display !== 'none') renderGrid();
+});
+
+/* ============================= DASHBOARD ============================= */
+function renderDashboard(){
+  const el = document.getElementById('dashboardView');
+  const live = apps.filter(a=>a.published && !a.archived).length;
+  const draft = apps.filter(a=>!a.published && !a.archived).length;
+  const archived = apps.filter(a=>a.archived).length;
+  const totalVersions = apps.reduce((s,a)=>s+(a.versionHistory?a.versionHistory.length:0), 0);
+  const monthAgo = Date.now() - 30*86400*1000;
+  const newThisMonth = apps.filter(a => new Date(a.createdAt).getTime() > monthAgo).length;
+
+  const catCounts = {};
+  apps.forEach(a => { const c = a.category || 'Kategorisiz'; catCounts[c] = (catCounts[c]||0)+1; });
+  const catEntries = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxCat = Math.max(1, ...catEntries.map(e=>e[1]));
+
+  const trackCounts = { production:0, beta:0, alpha:0, internal:0 };
+  apps.forEach(a => { trackCounts[a.track] = (trackCounts[a.track]||0)+1; });
+  const maxTrack = Math.max(1, ...Object.values(trackCounts));
+
+  const DICO = {
+    total:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+    live:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+    draft:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+    archived:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="5" rx="1.2"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9"/><path d="M10 13h4"/></svg>',
+    versions:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>',
+    newmonth:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+  };
+  el.innerHTML = `
+    <div class="page-head"><div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-desc">Uygulama havuzuna genel bakış.</div>
+    </div></div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dash-card-top"><div class="stat-ico">${DICO.total}</div></div><div class="n">${apps.length}</div><div class="l">Toplam uygulama</div></div>
+      <div class="dash-card"><div class="dash-card-top"><div class="stat-ico" style="color:var(--green)">${DICO.live}</div></div><div class="n" style="color:var(--green)">${live}</div><div class="l">Yayında</div></div>
+      <div class="dash-card"><div class="dash-card-top"><div class="stat-ico" style="color:var(--amber)">${DICO.draft}</div></div><div class="n" style="color:var(--amber)">${draft}</div><div class="l">Taslak</div></div>
+      <div class="dash-card"><div class="dash-card-top"><div class="stat-ico">${DICO.archived}</div></div><div class="n" style="color:var(--text-dim)">${archived}</div><div class="l">Arşiv</div></div>
+      <div class="dash-card"><div class="dash-card-top"><div class="stat-ico">${DICO.versions}</div></div><div class="n">${totalVersions}</div><div class="l">Toplam sürüm</div></div>
+      <div class="dash-card"><div class="dash-card-top"><div class="stat-ico" style="color:var(--red-2)">${DICO.newmonth}</div></div><div class="n" style="color:var(--red-2)">${newThisMonth}</div><div class="l">Bu ay eklenen</div></div>
+    </div>
+    <div class="dash-cols">
+      <div>
+        <div class="section-card">
+          <h3>Kategoriye göre dağılım</h3>
+          <div class="sub">Uygulama sayısı, kategori bazında.</div>
+          <div class="bar-list">
+            ${catEntries.length ? catEntries.map(([cat,n])=>`
+              <div class="bar-row">
+                <div class="bar-label">${escapeHtml(cat)}</div>
+                <div class="bar-track"><div class="bar-fill" style="width:${(n/maxCat*100).toFixed(0)}%"></div></div>
+                <div class="bar-n">${n}</div>
+              </div>
+            `).join('') : `<div class="empty-mini">Henüz uygulama yok.</div>`}
+          </div>
+        </div>
+        <div class="section-card">
+          <h3>Yayın kanalına göre dağılım</h3>
+          <div class="sub">GitHub Pages tek ortam sunar; kanal bilgisi sadece takip amaçlıdır.</div>
+          <div class="bar-list">
+            ${Object.entries(trackCounts).filter(([,n])=>n>0).map(([t,n])=>`
+              <div class="bar-row">
+                <div class="bar-label">${TRACK_LABEL[t]}</div>
+                <div class="bar-track"><div class="bar-fill" style="width:${(n/maxTrack*100).toFixed(0)}%"></div></div>
+                <div class="bar-n">${n}</div>
+              </div>
+            `).join('') || `<div class="empty-mini">Henüz uygulama yok.</div>`}
+          </div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-head-row"><h3>Son aktivite</h3></div>
+        <div class="sub">Son işlemler.</div>
+        <div class="activity-list">
+          ${activityLog.length===0 ? `<div class="empty-mini">Henüz işlem yok.</div>` :
+            activityLog.slice(0,7).map(renderActivityRow).join('')}
+        </div>
+        <a href="#activity" class="see-all" id="dashSeeAllAct">Tümünü gör →</a>
+      </div>
+    </div>
+  `;
+  const seeAll = document.getElementById('dashSeeAllAct');
+  if(seeAll) seeAll.addEventListener('click', (e)=>{ e.preventDefault(); showView('activity'); });
+}
+
+/* ============================= RELEASES ============================= */
+function renderReleases(){
+  const el = document.getElementById('releasesView');
+  const rows = [];
+  apps.forEach(app => {
+    (app.versionHistory||[]).slice().reverse().forEach((v,i) => {
+      rows.push({ app, v, isCurrent: i===0 });
+    });
+  });
+  rows.sort((a,b) => new Date(b.v.date) - new Date(a.v.date));
+
+  el.innerHTML = `
+    <div class="page-head"><div>
+      <div class="page-title">Sürümler</div>
+      <div class="page-desc">Tüm uygulamalardaki sürüm geçmişi, en yeniden en eskiye.</div>
+    </div></div>
+    <div class="section-card">
+      ${rows.length===0 ? `<div class="empty-mini">Henüz yayınlanmış bir sürüm yok.</div>` :
+        rows.slice(0,60).map(r => `
+        <div class="rel-row" data-id="${r.app.id}">
+          <div class="rel-icon" style="background:${r.app.icon?'transparent':colorFor(r.app.name)}">${r.app.icon?`<img src="${r.app.icon}">`:initials(r.app.name)}</div>
+          <div class="rel-main">
+            <div class="rel-name">${escapeHtml(r.app.name)} <span class="card-version">v${escapeHtml(r.v.version)}</span></div>
+            <div class="rel-sub">${new Date(r.v.date).toLocaleString('tr-TR')}</div>
+          </div>
+          <div class="rel-note">${escapeHtml(r.v.note||'—')}</div>
+          <div class="rel-right">
+            ${r.isCurrent ? `<span class="track-badge ${r.app.track}">${TRACK_LABEL[r.app.track]}</span>` : ''}
+            <span class="badge ${r.app.archived?'archived':(r.app.published?'live':'draft')}"><span class="dot"></span>${r.app.archived?'Arşivlendi':(r.app.published?'Yayında':'Taslak')}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  el.querySelectorAll('.rel-row[data-id]').forEach(row => row.addEventListener('click', ()=> openDetail(row.dataset.id)));
+}
+
+/* ============================= ACTIVITY PAGE ============================= */
+function renderActivityRow(item){
+  return `
+    <div class="activity-row">
+      <div class="act-ico ${actIconClass(item.type)}">${actIconSvg(item.type)}</div>
+      <div class="act-body">
+        <div class="act-title"><b>${escapeHtml(item.appName||'—')}</b> ${ACT_LABEL[item.type]||item.type}</div>
+        ${item.detail ? `<div class="act-detail">${escapeHtml(item.detail)}</div>` : ''}
+      </div>
+      <div class="act-time">${timeAgo(item.ts)}</div>
+    </div>
+  `;
+}
+function renderActivityPage(){
+  const el = document.getElementById('activityView');
+  el.innerHTML = `
+    <div class="page-head">
+      <div>
+        <div class="page-title">Aktivite</div>
+        <div class="page-desc">Tüm uygulamalardaki işlem geçmişi.</div>
+      </div>
+      ${activityLog.length ? `<button class="btn btn-sm btn-ghost" id="clearActBtn">Günlüğü temizle</button>` : ''}
+    </div>
+    <div class="section-card">
+      <div class="activity-list">
+        ${activityLog.length===0 ? `<div class="empty-mini">Henüz işlem yok. Bir uygulama oluştur veya güncelle.</div>` :
+          activityLog.map(renderActivityRow).join('')}
+      </div>
+    </div>
+  `;
+  const clearBtn = document.getElementById('clearActBtn');
+  if(clearBtn) clearBtn.addEventListener('click', ()=>{
+    if(!confirm('Aktivite günlüğü temizlensin mi?')) return;
+    activityLog = []; localStorage.setItem(LS_ACTIVITY, '[]'); renderActivityPage();
+  });
+}
+
+/* ============================= COMMAND PALETTE ============================= */
+let cmdkSelIdx = 0;
+function cmdkBuildItems(query){
+  const q = query.trim().toLowerCase();
+  const items = [];
+  if(!q){
+    items.push({type:'nav', label:'Dashboard', view:'dashboard'});
+    items.push({type:'nav', label:'Uygulamalarım', view:'home'});
+    items.push({type:'nav', label:'Sürümler', view:'releases'});
+    items.push({type:'nav', label:'Aktivite', view:'activity'});
+    items.push({type:'action', label:'Yeni Uygulama', action:'newapp'});
+    items.push({type:'action', label:'Ayarlar', action:'settings'});
+  } else {
+    apps.filter(a=>a.name.toLowerCase().includes(q)).slice(0,8).forEach(a => items.push({type:'app', app:a}));
+    if('yeni uygulama'.includes(q) || 'new'.includes(q)) items.push({type:'action', label:'Yeni Uygulama', action:'newapp'});
+    if('dashboard'.includes(q)) items.push({type:'nav', label:'Dashboard', view:'dashboard'});
+    if('sürümler'.includes(q) || 'surum'.includes(q)) items.push({type:'nav', label:'Sürümler', view:'releases'});
+    if('aktivite'.includes(q)) items.push({type:'nav', label:'Aktivite', view:'activity'});
+    if('ayarlar'.includes(q)) items.push({type:'action', label:'Ayarlar', action:'settings'});
+  }
+  return items;
+}
+function cmdkRender(){
+  const q = document.getElementById('cmdkInput').value;
+  const items = cmdkBuildItems(q);
+  cmdkSelIdx = Math.min(cmdkSelIdx, Math.max(0, items.length-1));
+  const box = document.getElementById('cmdkResults');
+  if(items.length === 0){ box.innerHTML = `<div class="cmdk-empty">Sonuç yok.</div>`; return; }
+  box.innerHTML = items.map((it,i) => {
+    if(it.type==='app'){
+      const a = it.app;
+      return `<div class="cmdk-item ${i===cmdkSelIdx?'sel':''}" data-idx="${i}">
+        <div class="ci-icon" style="background:${a.icon?'transparent':colorFor(a.name)}">${a.icon?`<img src="${a.icon}">`:initials(a.name)}</div>
+        <div class="ci-label">${escapeHtml(a.name)}</div>
+        <div class="ci-sub">v${escapeHtml(a.version)}</div>
+      </div>`;
+    }
+    return `<div class="cmdk-item ${i===cmdkSelIdx?'sel':''}" data-idx="${i}">
+      <div class="ci-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="ci-label">${escapeHtml(it.label)}</div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.cmdk-item').forEach(el => el.addEventListener('click', ()=> cmdkSelect(items[+el.dataset.idx])));
+  box.dataset.count = items.length;
+  box._items = items;
+}
+function cmdkSelect(it){
+  closeCmdk();
+  if(it.type==='app') openDetail(it.app.id);
+  else if(it.type==='nav') showView(it.view);
+  else if(it.action==='newapp') document.getElementById('newAppBtn').click();
+  else if(it.action==='settings'){ loadSettingsIntoForm(); openOverlay('settingsOverlay'); }
+}
+function openCmdk(){
+  document.getElementById('cmdkInput').value = '';
+  cmdkSelIdx = 0;
+  document.getElementById('cmdkOverlay').classList.add('open');
+  cmdkRender();
+  setTimeout(()=> document.getElementById('cmdkInput').focus(), 30);
+}
+function closeCmdk(){ document.getElementById('cmdkOverlay').classList.remove('open'); }
+document.getElementById('cmdkBtn').addEventListener('click', openCmdk);
+document.getElementById('cmdkOverlay').addEventListener('click', (e)=>{ if(e.target.id==='cmdkOverlay') closeCmdk(); });
+document.getElementById('cmdkInput').addEventListener('input', ()=>{ cmdkSelIdx=0; cmdkRender(); });
+document.getElementById('cmdkInput').addEventListener('keydown', (e)=>{
+  const box = document.getElementById('cmdkResults');
+  const items = box._items || [];
+  if(e.key==='ArrowDown'){ e.preventDefault(); cmdkSelIdx = Math.min(items.length-1, cmdkSelIdx+1); cmdkRender(); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); cmdkSelIdx = Math.max(0, cmdkSelIdx-1); cmdkRender(); }
+  else if(e.key==='Enter'){ e.preventDefault(); if(items[cmdkSelIdx]) cmdkSelect(items[cmdkSelIdx]); }
+  else if(e.key==='Escape'){ closeCmdk(); }
+});
+document.addEventListener('keydown', (e)=>{
+  if((e.metaKey || e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCmdk(); }
+  else if(e.key==='Escape') closeCmdk();
+});
+
+/* ============================= INIT ============================= */
+function currentViewName(){
+  const found = VIEW_IDS.find(v => document.getElementById(v+'View') && document.getElementById(v+'View').style.display !== 'none');
+  return found || 'dashboard';
+}
+async function refreshFromGithub(){
+  if(!settings.token || !settings.username) return;
+  try{
+    const file = await ghGetFile(settings.hubRepo, 'manifest.json');
+    if(!file){
+      // manifest.json bulunamadı — repo var mı yok mu ayırt ederek anlamlı uyarı ver
+      let repoExists = true;
+      try{ await ghFetch(`/repos/${settings.username}/${settings.hubRepo}`); }
+      catch(e){ if(e.status === 404) repoExists = false; }
+      if(!repoExists){
+        toast(`"${settings.hubRepo}" adında bir repo bulunamadı (hesap: @${settings.username}). Repo adını kontrol et veya token'ın "repo" kapsamına sahip olduğundan emin ol. Şimdilik son bilinen yerel liste gösteriliyor.`, 'err');
+        // NOT: apps listesi bilerek SİLİNMİYOR — GitHub'a erişilemediği anlarda
+        // (örn. farklı bir yerde açıldığında, ağ/CORS/izin sorunlarında) elde
+        // mevcut olan son veriyi (localStorage) göstermeye devam ediyoruz.
+      } else if(apps.length === 0){
+        toast(`@${settings.username}/${settings.hubRepo} deposunda henüz manifest.json / uygulama yok. Buradan "Yeni Uygulama" ile ilk uygulamanı ekleyebilirsin.`);
+      } else {
+        // Repo var, manifest.json yok ama elimizde önbellek var — yine dokunma.
+      }
+    } else {
+      apps = JSON.parse(fromB64Utf8(file.content)).map(normApp);
+      localStorage.setItem(LS_MANIFEST_CACHE, JSON.stringify(apps));
+    }
+    const cur = currentViewName();
+    if(cur === 'home'){ renderStats(); renderFilterBar(); renderGrid(); }
+    else if(cur === 'dashboard') renderDashboard();
+    else if(cur === 'releases') renderReleases();
+  }catch(e){
+    toast('GitHub verisi alınamadı, önbellek gösteriliyor: ' + e.message, 'err');
+  }
+}
+
+apps = apps.map(normApp);
+checkTokenBanner(); updateRepoBadge();
+
+(function initRoute(){
+  const hash = location.hash.replace('#','');
+  if(hash && apps.find(a=>a.id===hash)){ openDetail(hash, {silent:true}); history.replaceState({view:'detail', id:hash}, '', '#'+hash); }
+  else if(['home','releases','activity','dashboard'].includes(hash)){ showView(hash, {silent:true}); history.replaceState({view:hash}, '', '#'+hash); }
+  else { showView('dashboard', {silent:true}); history.replaceState({view:'dashboard'}, '', '#dashboard'); }
+})();
+
+refreshFromGithub();
+autoScanAndUseRepo();
+</script>
+</body>
+</html>
