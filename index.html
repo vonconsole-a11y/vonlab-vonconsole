@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>VonHub Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -608,22 +608,113 @@
   .cmdk-empty{ text-align:center; padding:26px 10px; color:var(--text-faint); font-size:12.5px; }
   .cmdk-group-label{ font-size:10.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-faint); padding:10px 10px 4px; }
 
-  @media (max-width:900px){
-    .sidebar{
-      position:static; height:auto; width:100%; flex-direction:row; overflow-x:auto;
-      border-right:none; border-bottom:1px solid var(--border-soft); padding:10px 12px; gap:6px;
-    }
-    .side-item{ width:auto; white-space:nowrap; }
-    .side-label, .side-sep{ display:none; }
-    .app-shell{ flex-direction:column; }
+  /* ---------- BOTTOM NAV (mobile) ---------- */
+  .bottom-nav{
+    display:none;
   }
-  @media (max-width:600px){
-    .topbar{ padding:12px 16px; flex-wrap:wrap; }
-    .topbar-search{ order:3; max-width:none; width:100%; }
-    .page{ padding:24px 16px 60px; }
-    .detail-actions{ margin-left:0; width:100%; }
-    .field-row{ flex-direction:column; }
+  .fab-new{
+    display:none;
+  }
+
+  @media (max-width:900px){
+    .sidebar{ display:none; }
+    .app-shell{ flex-direction:column; }
+    .main-area{ width:100%; }
+  }
+
+  /* ---------- TABLET / SMALL LAPTOP ---------- */
+  @media (max-width:760px){
+    .page{ padding:20px 16px 96px; }
+    .grid{ grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); }
+    .stat-row{ grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); }
+    .dash-grid{ grid-template-columns:repeat(2, 1fr); }
     .dash-cols{ grid-template-columns:1fr; }
+
+    /* Bottom tab bar replaces the sidebar */
+    .bottom-nav{
+      display:flex; align-items:stretch; justify-content:space-around;
+      position:fixed; left:0; right:0; bottom:0; z-index:60;
+      background:rgba(10,10,12,.92); backdrop-filter:blur(16px);
+      border-top:1px solid var(--border-soft);
+      padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    }
+    .bottom-nav .side-item{
+      flex-direction:column; gap:3px; padding:6px 4px; border-radius:10px;
+      font-size:10.5px; font-weight:600; text-align:center; min-width:0;
+    }
+    .bottom-nav .side-item svg{ width:19px; height:19px; }
+    .bottom-nav .side-item.active::before{ display:none; }
+    .bottom-nav .side-item span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:64px; }
+
+    /* Floating "new app" button, thumb-reachable */
+    .fab-new{
+      display:flex; align-items:center; justify-content:center;
+      position:fixed; right:16px; bottom:calc(74px + env(safe-area-inset-bottom));
+      z-index:59; width:52px; height:52px; border-radius:50%;
+      background:linear-gradient(155deg, var(--red-2), #c23a22); color:#fff; border:none;
+      box-shadow:0 12px 26px -8px var(--red-glow), 0 4px 10px rgba(0,0,0,.4);
+    }
+    .fab-new:active{ transform:scale(.94); }
+
+    /* Trim the topbar: hide the redundant "new app" text button + kbd hint, keep icons */
+    #newAppBtn{ display:none; }
+    .kbd-hint{ display:none; }
+  }
+
+  @media (max-width:600px){
+    .topbar{ padding:10px 14px; gap:10px; }
+    .brand{ padding-right:12px; margin-right:0; }
+    .brand-sub{ max-width:140px; }
+    .topbar-search{ order:3; max-width:none; width:100%; margin-top:2px; }
+    .page{ padding:18px 14px 96px; }
+    .page-title{ font-size:21px; }
+    .detail-actions{ margin-left:0; width:100%; }
+    .detail-actions .btn{ flex:1; }
+    .field-row{ flex-direction:column; gap:14px; }
+    .grid{ grid-template-columns:1fr; }
+    .stat-row{ grid-template-columns:repeat(2, 1fr); }
+    .dash-grid{ grid-template-columns:repeat(2, 1fr); }
+    .switch-row{ margin-left:0; padding-left:0; border-left:none; flex-basis:100%; justify-content:space-between; }
+    .filter-bar{ justify-content:flex-start; }
+    .rel-row{ padding:12px 4px; }
+    .rel-main{ min-width:120px; }
+    .rel-note{ min-width:100%; order:5; }
+    .rel-right{ width:100%; margin-left:0; }
+    .version-row .vactions{ margin-left:0; width:100%; justify-content:flex-start; }
+    .card-link{ max-width:96px; }
+
+    /* Comfortable touch targets */
+    .btn{ min-height:42px; padding:9px 16px; }
+    .btn-icon{ width:42px; height:42px; }
+    .btn-sm{ min-height:36px; }
+    .side-item{ min-height:44px; }
+    .chip{ padding:9px 14px; min-height:38px; }
+    .close-x{ font-size:24px; padding:8px; }
+
+    /* Avoid iOS input auto-zoom */
+    input[type=text], input[type=password], textarea, select{ font-size:16px; }
+
+    /* Modals become bottom sheets: easier to reach and dismiss on a phone */
+    .overlay{ align-items:flex-end; padding:0; }
+    .modal, .modal.wide{
+      max-width:100%; width:100%; max-height:92vh; border-radius:18px 18px 0 0;
+    }
+    .modal-foot{ flex-direction:column-reverse; gap:8px; }
+    .modal-foot .btn{ width:100%; }
+    .radio-row{ flex-direction:column; }
+
+    /* Command palette: near-fullscreen on small phones */
+    .cmdk-overlay{ padding-top:6vh; padding-left:10px; padding-right:10px; align-items:flex-start; }
+    .cmdk-box{ max-width:100%; }
+
+    /* Toasts span the width instead of hugging a corner */
+    .toast-wrap{ left:12px; right:12px; bottom:calc(84px + env(safe-area-inset-bottom)); }
+    .toast{ max-width:none; }
+  }
+
+  @media (max-width:380px){
+    .stat-row{ grid-template-columns:1fr; }
+    .dash-grid{ grid-template-columns:1fr; }
   }
 </style>
 </head>
@@ -713,6 +804,35 @@
     <div id="activityView" class="page" style="display:none;"></div>
   </main>
 </div>
+
+<!-- Bottom tab bar (mobile only) -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="side-item" data-view="dashboard">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    <span>Dashboard</span>
+  </button>
+  <button class="side-item" data-view="home">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    <span>Uygulamalar</span>
+  </button>
+  <button class="side-item" data-view="releases">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+    <span>Sürümler</span>
+  </button>
+  <button class="side-item" data-view="activity">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <span>Aktivite</span>
+  </button>
+  <button class="side-item" data-view="settings">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 4.29l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.4a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9c0 .67.39 1.27 1 1.51h.6a2 2 0 010 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
+    <span>Ayarlar</span>
+  </button>
+</nav>
+
+<!-- Floating "new app" button (mobile only) -->
+<button class="fab-new" id="fabNewApp" title="Yeni Uygulama" aria-label="Yeni Uygulama">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
 
 <!-- Command Palette -->
 <div class="cmdk-overlay" id="cmdkOverlay">
@@ -2606,6 +2726,10 @@ checkTokenBanner(); updateRepoBadge();
 
 refreshFromGithub();
 autoScanAndUseRepo();
+
+/* Mobile FAB → aynı "Yeni Uygulama" akışını tetikler */
+const fabNewApp = document.getElementById('fabNewApp');
+if(fabNewApp) fabNewApp.addEventListener('click', ()=> document.getElementById('newAppBtn').click());
 </script>
 </body>
 </html>
