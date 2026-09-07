@@ -251,7 +251,54 @@
   .badge .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
   .badge.live .dot{ box-shadow:0 0 0 3px rgba(62,207,126,.18); animation:pulse 2s infinite; }
 
-  /* ---------- CREDENTIALS (accounts / sql) ---------- */
+  /* ---------- AUTH GATE (login) & BOOT (setup loading) ---------- */
+  .auth-gate{
+    position:fixed; inset:0; z-index:200;
+    display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(1100px 560px at 12% -8%, rgba(232,67,47,.12), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(79,158,242,.06), transparent 55%),
+      var(--bg);
+    padding:20px;
+  }
+  .auth-card{
+    width:100%; max-width:380px;
+    background:linear-gradient(160deg, var(--surface), var(--bg-2));
+    border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-pop);
+    padding:34px 30px 28px;
+  }
+  .auth-brand{ display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:26px; }
+  .auth-brand .brand-mark{ width:44px; height:44px; border-radius:12px; }
+  .auth-brand .brand-mark svg{ width:22px; height:22px; }
+  .auth-brand h1{ font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; }
+  .auth-brand p{ font-size:12.5px; color:var(--text-dim); text-align:center; }
+  .auth-form{ display:flex; flex-direction:column; gap:14px; }
+  .auth-error{
+    display:none; font-size:12.5px; color:#ff8a7a; background:rgba(232,67,47,.1);
+    border:1px solid var(--red-dim); border-radius:9px; padding:9px 12px;
+  }
+  .auth-submit{ width:100%; justify-content:center; padding:11px; font-size:13.5px; margin-top:2px; }
+
+  .boot-screen{
+    position:fixed; inset:0; z-index:210;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:var(--bg);
+    gap:22px;
+  }
+  .boot-ring{
+    width:52px; height:52px; border-radius:50%;
+    border:3px solid var(--border); border-top-color:var(--red-2);
+    animation:boot-spin 0.9s linear infinite;
+  }
+  @keyframes boot-spin{ to{ transform:rotate(360deg); } }
+  .boot-title{ font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; color:var(--text); }
+  .boot-caption{
+    position:fixed; left:20px; bottom:20px; z-index:211;
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-faint);
+    max-width:min(60vw,420px); transition:opacity .25s;
+  }
+
   .cred-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:12px; position:relative; }
   .cred-chip{
     display:inline-flex; align-items:center; gap:6px; max-width:260px;
@@ -809,6 +856,32 @@
 </style>
 </head>
 <body>
+
+<!-- ============================= AUTH GATE (ilk giriş ekranı) ============================= -->
+<div class="auth-gate" id="authGate" style="display:none;">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <h1>VonHub Console</h1>
+      <p>Devam etmek için giriş yap.</p>
+    </div>
+    <div class="auth-form">
+      <div class="auth-error" id="authError"></div>
+      <div class="field"><label>Kullanıcı adı</label><input type="text" id="auth_username" placeholder="kullanıcı adı" autocomplete="username"></div>
+      <div class="field"><label>Şifre</label><input type="password" id="auth_password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn btn-primary auth-submit" id="auth_submit">Giriş Yap</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= BOOT SCREEN (ilk kurulum) ============================= -->
+<div class="boot-screen" id="bootScreen" style="display:none;">
+  <div class="boot-ring"></div>
+  <div class="boot-title">Kurulum yapılıyor…</div>
+</div>
+<div class="boot-caption" id="bootCaption" style="display:none;"></div>
 
 <div class="topbar">
   <div class="brand">
@@ -1393,6 +1466,42 @@ function fromB64Utf8(b64){
   const bin = atob(b64.replace(/\n/g,''));
   const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
   return new TextDecoder().decode(bytes);
+}
+
+/* ============================= BOOTSTRAP ACCOUNT (ilk giriş için) =============================
+   Bu blok, kullanıcı henüz hiçbir GitHub token'ı girmemişken "Account" dosyasını okuyabilmek
+   için kullanılan tek amaçlı, salt-okunur bir bağlantıdır. settings.token'dan tamamen ayrıdır.
+   ÖNEMLİ: BOOTSTRAP_TOKEN bu HTML dosyasının içinde düz metin olarak durur — sayfayı görebilen
+   herkes bu token'ı görebilir. Bu yüzden buraya sadece "vonlab-console-data" reposuna salt-okunur
+   (read-only, sadece Contents: Read) erişimi olan bir fine-grained token koy; asla tam yetkili
+   ("repo" kapsamlı) bir classic token koyma. */
+const ACCOUNT_OWNER = 'vonconsole-a11y';
+const ACCOUNT_REPO  = 'vonlab-console-data';
+const ACCOUNT_PATH  = 'Account';
+const BOOTSTRAP_TOKEN = 'PASTE_READONLY_TOKEN_HERE'; // <-- bunu sadece bu repoya salt-okunur erişimi olan token ile değiştir
+
+async function fetchAccountFile(){
+  if(!BOOTSTRAP_TOKEN || BOOTSTRAP_TOKEN === 'PASTE_READONLY_TOKEN_HERE'){
+    throw new Error('BOOTSTRAP_TOKEN henüz ayarlanmadı (koddaki BOOTSTRAP_TOKEN sabitini doldur).');
+  }
+  const res = await fetch(`${GH}/repos/${ACCOUNT_OWNER}/${ACCOUNT_REPO}/contents/${ACCOUNT_PATH}`, {
+    headers: { 'Authorization': 'token ' + BOOTSTRAP_TOKEN, 'Accept': 'application/vnd.github+json' },
+    cache: 'no-store'
+  });
+  if(!res.ok){
+    if(res.status === 404) throw new Error('"Account" dosyası bulunamadı.');
+    if(res.status === 401 || res.status === 403) throw new Error('Bootstrap token geçersiz/yetkisiz.');
+    throw new Error('Account dosyasına erişilemedi (' + res.status + ').');
+  }
+  const file = await res.json();
+  let data;
+  try{ data = JSON.parse(fromB64Utf8(file.content)); }
+  catch(e){ throw new Error('Account dosyası geçerli JSON değil.'); }
+  return data;
+}
+function findAccountUser(data, username, password){
+  const list = Array.isArray(data.users) ? data.users : [];
+  return list.find(u => u && u.username === username && u.password === password);
 }
 
 async function ghEnsureRepo(repoName){
@@ -3469,9 +3578,147 @@ checkTokenBanner(); updateRepoBadge();
   else { showView('dashboard', {silent:true}); history.replaceState({view:'dashboard'}, '', '#dashboard'); }
 })();
 
-refreshFromGithub();
-if(settings.token && settings.username && settings.hubRepo && settings.cryptoKey) initCredsSync();
-autoScanAndUseRepo();
+/* ============================= AUTH GATE (ilk giriş) & OTOMATİK KURULUM ============================= */
+function showAuthGate(){ document.getElementById('authGate').style.display = 'flex'; }
+function hideAuthGate(){ document.getElementById('authGate').style.display = 'none'; }
+function setAuthError(msg){
+  const el = document.getElementById('authError');
+  if(!msg){ el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = msg; el.style.display = 'block';
+}
+
+const BOOT_CAPTIONS = [
+  'Depolar taşınıyor…', 'Bitler ışınlanıyor…', "Kutular GitHub'a yükleniyor…",
+  'Repolar sayılıyor…', 'Kahve demleniyor ☕', "Pixel'ler ütüleniyor…",
+  'Anahtarlar kayboluyor, sonra bulunuyor…', 'Ayarlara son cila çekiliyor…',
+  'Manifest hizaya getiriliyor…', 'Sunucular derin nefes alıyor…'
+];
+let bootCaptionTimer = null;
+function startBootCaptions(){
+  const el = document.getElementById('bootCaption');
+  let i = 0;
+  el.style.display = 'block'; el.style.opacity = 1;
+  el.textContent = BOOT_CAPTIONS[0];
+  bootCaptionTimer = setInterval(()=>{
+    i = (i+1) % BOOT_CAPTIONS.length;
+    el.style.opacity = 0;
+    setTimeout(()=>{ el.textContent = BOOT_CAPTIONS[i]; el.style.opacity = 1; }, 220);
+  }, 2200);
+}
+function stopBootCaptions(){
+  if(bootCaptionTimer) clearInterval(bootCaptionTimer);
+  bootCaptionTimer = null;
+  const el = document.getElementById('bootCaption');
+  if(el) el.style.display = 'none';
+}
+function showBoot(){ document.getElementById('bootScreen').style.display = 'flex'; startBootCaptions(); }
+function hideBoot(){ document.getElementById('bootScreen').style.display = 'none'; stopBootCaptions(); }
+
+/* Hesaptaki tüm repoları tarar; kökünde index.html olup manifestte henüz kaydı
+   bulunmayan repoları otomatik olarak birer "keşfedilen uygulama" kaydı halinde
+   manifeste ekler. Her keşfedilen uygulama kendi ayrı reposuyla (mode:'multi') kaydedilir. */
+async function autoDiscoverAppsFromRepos(onProgress){
+  const emit = onProgress || (()=>{});
+  let repos = [];
+  for(let page=1; page<=10; page++){
+    let batch = [];
+    try{ batch = await ghFetch(`/user/repos?per_page=100&page=${page}&affiliation=owner&sort=updated`); }
+    catch(e){ break; }
+    repos = repos.concat(batch||[]);
+    if(!batch || batch.length < 100) break;
+  }
+  const known = new Set(apps.map(a=>a.repo));
+  const candidates = repos.filter(r => r.name !== settings.hubRepo && !known.has(r.name));
+  if(!candidates.length) return 0;
+  let added = 0;
+  const list = await loadManifest();
+  for(let i=0;i<candidates.length;i++){
+    const r = candidates[i];
+    emit(`Repo taranıyor… ${i+1}/${candidates.length} (${r.name})`);
+    try{
+      const file = await ghGetFile(r.name, 'index.html');
+      if(!file) continue;
+      let pagesUrl = '';
+      try{ const pages = await ghFetch(`/repos/${settings.username}/${r.name}/pages`); pagesUrl = (pages && pages.html_url) || ''; }catch(e){}
+      const id = slugify(r.name) + '-' + Date.now().toString(36).slice(-4) + i;
+      list.push(normApp({
+        id, name: r.name, description: r.description || '', version:'1.0.0',
+        repo: r.name, path:'index.html', mode:'multi',
+        published: !!pagesUrl, pagesUrl, customDomain:'',
+        icon:null, category:'', group:'', favorite:false, archived:false,
+        files:['index.html'], analytics:{enabled:false, code:''},
+        createdAt: r.created_at || new Date().toISOString(),
+        versionHistory:[{ version:'1.0.0', date: r.created_at || new Date().toISOString(), note:"GitHub taramasıyla otomatik keşfedildi" }]
+      }));
+      added++;
+    }catch(e){ /* index.html yok ya da erişilemedi — atla */ }
+  }
+  if(added) await saveManifest(list);
+  return added;
+}
+
+/* Giriş sonrası: token'ı doğrula, veri deposunu bağla, hesap/SQL verilerini çek,
+   hesaptaki tüm repoları tarayıp bulunan uygulamaları arayüze ekle. Bitince kullanıcı
+   ayarlara hiç dokunmadan konsolu doğrudan kullanabilir. */
+async function runFirstTimeSetup(){
+  showBoot();
+  try{
+    settings.username = await verifyAndFixUsername(settings.token);
+    localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+    await refreshFromGithub();
+    if(settings.cryptoKey) await pullCredsFromGithub(true);
+    await autoDiscoverAppsFromRepos();
+    await refreshFromGithub();
+  }catch(e){
+    toast('Kurulum sırasında bir sorun oluştu: ' + e.message, 'err');
+  }finally{
+    hideBoot();
+    checkTokenBanner(); updateRepoBadge();
+  }
+}
+
+document.getElementById('auth_submit').addEventListener('click', async ()=>{
+  const username = document.getElementById('auth_username').value.trim();
+  const password = document.getElementById('auth_password').value;
+  setAuthError('');
+  if(!username || !password){ setAuthError('Kullanıcı adı ve şifre gerekli.'); return; }
+  const btn = document.getElementById('auth_submit');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Kontrol ediliyor'; btn.disabled = true;
+  try{
+    const data = await fetchAccountFile();
+    const user = findAccountUser(data, username, password);
+    if(!user){ setAuthError('Kullanıcı adı veya şifre hatalı.'); return; }
+    const gh = data.github || {};
+    if(!gh.token){ setAuthError('Account dosyasında "github.token" bulunamadı.'); return; }
+    settings.token = gh.token;
+    settings.hubRepo = data.hubRepo || ACCOUNT_REPO;
+    settings.cryptoKey = (data.sync && data.sync.cryptoKey) || '';
+    settings.autoScan = true;
+    localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+    hideAuthGate();
+    await runFirstTimeSetup();
+    toast('Hoş geldin, ' + username + '.');
+  }catch(e){
+    setAuthError('Giriş yapılamadı: ' + e.message);
+  }finally{
+    btn.innerHTML = orig; btn.disabled = false;
+  }
+});
+document.getElementById('auth_password').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('auth_submit').click();
+});
+document.getElementById('auth_username').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('auth_password').focus();
+});
+
+if(!(settings.token && settings.username)){
+  showAuthGate();
+}else{
+  refreshFromGithub();
+  if(settings.token && settings.username && settings.hubRepo && settings.cryptoKey) initCredsSync();
+  autoScanAndUseRepo();
+}
 
 /* Mobile FAB → aynı "Yeni Uygulama" akışını tetikler */
 const fabNewApp = document.getElementById('fabNewApp');
