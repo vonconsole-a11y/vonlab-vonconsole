@@ -250,6 +250,68 @@
   .badge.archived{ background:rgba(154,154,162,.12); color:var(--text-dim); }
   .badge .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
   .badge.live .dot{ box-shadow:0 0 0 3px rgba(62,207,126,.18); animation:pulse 2s infinite; }
+
+  /* ---------- CREDENTIALS (accounts / sql) ---------- */
+  .cred-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:12px; position:relative; }
+  .cred-chip{
+    display:inline-flex; align-items:center; gap:6px; max-width:260px;
+    padding:6px 13px; border-radius:20px; font-size:12px; font-weight:600;
+    border:1px solid transparent; background:none; transition:.15s;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cred-chip svg{ flex-shrink:0; }
+  .cred-chip span{ overflow:hidden; text-overflow:ellipsis; }
+  .cred-account{ background:rgba(232,165,63,.12); color:var(--amber); border-color:rgba(232,165,63,.28); }
+  .cred-account:hover{ background:rgba(232,165,63,.2); }
+  .cred-sql{ background:rgba(62,207,126,.12); color:var(--green); border-color:rgba(62,207,126,.28); }
+  .cred-sql:hover{ background:rgba(62,207,126,.2); }
+  .cred-add{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:28px; height:28px; padding:0; border-radius:50%;
+    background:var(--surface-2); border:1px dashed var(--border); color:var(--text-dim); font-size:16px; line-height:1;
+  }
+  .cred-add:hover{ color:var(--text); border-color:var(--text-faint); background:var(--surface-3); }
+  .cred-empty-hint{ font-size:11.5px; color:var(--text-faint); }
+  .cred-menu{
+    position:absolute; left:0; top:calc(100% + 6px); background:var(--surface-2); border:1px solid var(--border);
+    border-radius:10px; min-width:150px; overflow:hidden; z-index:30;
+    box-shadow:0 14px 30px -12px rgba(0,0,0,.6);
+  }
+  .cred-menu button{
+    display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:10px 13px; font-size:12.5px;
+    background:none; border:none; color:var(--text);
+  }
+  .cred-menu button:hover{ background:var(--surface); }
+  .cred-menu .dot-ico{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  .acc-list{ display:flex; flex-direction:column; gap:8px; }
+  .acc-row{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:10px;
+  }
+  .acc-row .acc-ico{
+    width:28px; height:28px; border-radius:8px; flex-shrink:0;
+    background:rgba(232,165,63,.14); color:var(--amber);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .acc-row .acc-info{ flex:1; min-width:0; }
+  .acc-row .acc-email{ font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .acc-row .acc-pass{ font-size:11px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; margin-top:1px; }
+  .acc-row .acc-actions{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
+  .acc-row .acc-actions button{ background:none; border:none; color:var(--text-faint); padding:5px; border-radius:6px; display:flex; }
+  .acc-row .acc-actions button:hover{ color:var(--text); background:var(--surface-3); }
+  .acc-row.linked{ border-color:rgba(232,165,63,.3); }
+  .acc-row .link-btn{
+    flex-shrink:0; font-size:11.5px; font-weight:600; padding:6px 12px; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+  }
+  .acc-row .link-btn:hover{ background:var(--surface-3); }
+  .acc-row .link-btn.linked{ color:var(--green); border-color:rgba(62,207,126,.3); background:rgba(62,207,126,.1); }
+  .sql-content-area{
+    width:100%; min-height:160px; resize:vertical;
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.55;
+  }
+  .copy-row{ display:flex; justify-content:flex-end; }
   @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.4;} }
   .card-link{
     display:inline-flex; align-items:center; gap:4px;
@@ -998,10 +1060,80 @@
         </div>
         <div class="hint">Yerelde tutulan uygulama listesi önbelleğini siler ve GitHub'dan taze veri indirir. Token ve diğer ayarların silinmez.</div>
       </div>
+      <div class="field">
+        <label>Hesaplar</label>
+        <div class="hint">Uygulamalara bağlayabileceğin hesaplar (ör. Gmail). Şifre girmek zorunlu değil.</div>
+        <div class="acc-list" id="acc_list"></div>
+        <button class="btn btn-sm btn-ghost" id="acc_addBtn" type="button" style="align-self:flex-start; margin-top:2px;">+ Hesap ekle</button>
+      </div>
+      <div class="field">
+        <label>Hesap/SQL şifreleme parolası</label>
+        <input type="password" id="st_cryptoKey" placeholder="Bir senkron parolası belirle">
+        <div class="hint">Girilirse, yukarıdaki hesaplar ve uygulamalara eklediğin SQL kayıtları bu parolayla <b>şifrelenerek</b> hub reponda <code>creds.enc.json</code> dosyasına yazılır; böylece farklı cihazlardan da erişebilirsin. Parolayı unutursan şifreli veriyi çözemezsin. Boş bırakırsan hesap/SQL verileri GitHub'a gönderilmez, sadece bu tarayıcıda kalır. Repo'nun görünürlüğüne (public/private) bakmaksızın şifreli olarak tutulur, ama parola bu tarayıcıda saklandığı için yine de tam güvenli kabul etme.</div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" id="st_test">Bağlantıyı Test Et</button>
       <button class="btn btn-primary" id="st_save">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Account Add/Edit Modal -->
+<div class="overlay" id="accFormOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2 id="accFormTitle">Hesap Ekle</h2><button class="close-x" data-close="accFormOverlay">&times;</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Gmail / e-posta</label><input type="text" id="acc_email" placeholder="ornek@gmail.com"></div>
+      <div class="field"><label>Şifre <span style="color:var(--text-faint); font-weight:400;">(zorunlu değil)</span></label><input type="password" id="acc_password" placeholder="••••••••"></div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn btn-ghost" id="acc_deleteBtn" style="display:none; color:#ff8a7a;">Hesabı sil</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn btn-ghost" data-close="accFormOverlay">Vazgeç</button>
+        <button class="btn btn-primary" id="acc_submit">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Link Account to App Modal -->
+<div class="overlay" id="credLinkOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2>Hesap Bağla</h2><button class="close-x" data-close="credLinkOverlay">&times;</button></div>
+    <div class="modal-body">
+      <div class="acc-list" id="credLinkList"></div>
+      <div class="hint" id="credLinkEmptyHint" style="display:none;">Henüz kayıtlı hesap yok. Aşağıdan yeni bir hesap ekleyip bu uygulamaya bağlayabilirsin.</div>
+      <div style="height:1px; background:var(--border-soft); margin:4px 0;"></div>
+      <div class="field"><label>Yeni hesap ekle ve bağla</label><input type="text" id="credLink_email" placeholder="ornek@gmail.com"></div>
+      <div class="field"><input type="password" id="credLink_password" placeholder="Şifre (zorunlu değil)"></div>
+      <button class="btn btn-sm btn-primary" id="credLink_addBtn" type="button" style="align-self:flex-start;">Ekle ve Bağla</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close="credLinkOverlay">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- SQL Add/Edit Modal -->
+<div class="overlay" id="sqlFormOverlay">
+  <div class="modal wide">
+    <div class="modal-head"><h2 id="sqlFormTitle">SQL Ekle</h2><button class="close-x" data-close="sqlFormOverlay">&times;</button></div>
+    <div class="modal-body">
+      <div class="field"><label>SQL adı</label><input type="text" id="sql_name" placeholder="ör. Aylık satış raporu"></div>
+      <div class="field"><label>SQL açıklaması</label><textarea id="sql_desc" placeholder="Bu sorgu ne işe yarıyor?" style="min-height:60px;"></textarea></div>
+      <div class="field">
+        <label>SQL</label>
+        <textarea class="sql-content-area" id="sql_content" placeholder="SELECT * FROM ..."></textarea>
+        <div class="copy-row"><button class="btn btn-sm btn-ghost" id="sql_copyBtn" type="button">Kopyala</button></div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn btn-ghost" id="sql_deleteBtn" style="display:none; color:#ff8a7a;">Sil</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn btn-ghost" data-close="sqlFormOverlay">Vazgeç</button>
+        <button class="btn btn-primary" id="sql_submit">Kaydet</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1012,12 +1144,33 @@
 /* ============================= STATE ============================= */
 const LS_SETTINGS = 'vonlab_console_settings';
 const LS_MANIFEST_CACHE = 'vonlab_console_manifest_cache';
+const LS_ACCOUNTS = 'vonlab_console_accounts';
+const LS_APP_CREDS = 'vonlab_console_app_creds';
 
 let settings = JSON.parse(localStorage.getItem(LS_SETTINGS) || 'null') || {
-  username:'', token:'', mode:'single', hubRepo:'vonhub-console-data', autoScan:true
+  username:'', token:'', mode:'single', hubRepo:'vonhub-console-data', autoScan:true, cryptoKey:''
 };
 if(typeof settings.autoScan !== 'boolean') settings.autoScan = true;
+if(typeof settings.cryptoKey !== 'string') settings.cryptoKey = '';
 let apps = JSON.parse(localStorage.getItem(LS_MANIFEST_CACHE) || '[]');
+
+/* ---- accounts & sql (local-only, never pushed to GitHub manifest) ---- */
+let accounts = JSON.parse(localStorage.getItem(LS_ACCOUNTS) || '[]');           // [{id,email,password}]
+let appCreds = JSON.parse(localStorage.getItem(LS_APP_CREDS) || '{}');          // { [appId]: {accountIds:[], sqls:[{id,name,desc,content}]} }
+let currentDetailApp = null;
+let editingAccountId = null;      // when editing an existing account in accFormOverlay
+let accFormLinkAppId = null;      // if set, opened from an app's cred row (adds "unlink" context)
+let editingSqlId = null;          // when editing an existing sql entry in sqlFormOverlay
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function saveAccounts(){ localStorage.setItem(LS_ACCOUNTS, JSON.stringify(accounts)); queueCredsSync(); }
+function saveAppCreds(){ localStorage.setItem(LS_APP_CREDS, JSON.stringify(appCreds)); queueCredsSync(); }
+function getAppCred(appId){
+  if(!appCreds[appId]) appCreds[appId] = { accountIds:[], sqls:[] };
+  if(!Array.isArray(appCreds[appId].accountIds)) appCreds[appId].accountIds = [];
+  if(!Array.isArray(appCreds[appId].sqls)) appCreds[appId].sqls = [];
+  return appCreds[appId];
+}
 let pendingFile = null;      // {name, content} - single html for new app
 let pendingMultiFiles = null; // [{path, content}] for new app
 let pendingIcon = null;       // dataURL string
@@ -1245,6 +1398,84 @@ async function ghCompare(repo, base, head){
   return await ghFetch(`/repos/${settings.username}/${repo}/compare/${base}...${head}`);
 }
 
+/* ============================= ENCRYPTED CREDS SYNC (accounts + sql) ============================= */
+const CREDS_FILE = 'creds.enc.json';
+function buf2b64(buf){
+  const bytes = new Uint8Array(buf);
+  let bin=''; bytes.forEach(b=> bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+function b642buf(b64){
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+async function deriveCredsKey(passphrase, saltBytes){
+  if(!window.crypto || !window.crypto.subtle) throw new Error('Bu tarayıcı/ortam şifrelemeyi desteklemiyor (https bağlantısı gerekebilir).');
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  return await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt: saltBytes, iterations: 150000, hash:'SHA-256' },
+    baseKey,
+    { name:'AES-GCM', length:256 },
+    false,
+    ['encrypt','decrypt']
+  );
+}
+async function encryptCredsPayload(obj, passphrase){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveCredsKey(passphrase, salt);
+  const plain = new TextEncoder().encode(JSON.stringify(obj));
+  const cipherBuf = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, plain);
+  return { v:1, salt: buf2b64(salt), iv: buf2b64(iv), data: buf2b64(cipherBuf) };
+}
+async function decryptCredsPayload(payload, passphrase){
+  const salt = new Uint8Array(b642buf(payload.salt));
+  const iv = new Uint8Array(b642buf(payload.iv));
+  const key = await deriveCredsKey(passphrase, salt);
+  const cipherBuf = b642buf(payload.data);
+  const plainBuf = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, cipherBuf);
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
+let credsSyncTimer = null;
+function queueCredsSync(){
+  if(!(settings.token && settings.username && settings.hubRepo && settings.cryptoKey)) return;
+  if(credsSyncTimer) clearTimeout(credsSyncTimer);
+  credsSyncTimer = setTimeout(()=>{
+    pushCredsToGithub().catch(err => toast('Şifreli senkron başarısız: ' + err.message, 'err'));
+  }, 700);
+}
+async function pushCredsToGithub(){
+  if(!(settings.token && settings.username && settings.hubRepo && settings.cryptoKey)) return;
+  const payload = await encryptCredsPayload({ accounts, appCreds }, settings.cryptoKey);
+  await ghPutFile(settings.hubRepo, CREDS_FILE, JSON.stringify(payload, null, 2), 'hesap/sql verileri güncellendi (şifreli)');
+}
+async function pullCredsFromGithub(silent){
+  if(!(settings.token && settings.username && settings.hubRepo && settings.cryptoKey)) return;
+  let file;
+  try{ file = await ghGetFile(settings.hubRepo, CREDS_FILE); }
+  catch(e){ toast('Şifreli veriler indirilemedi: ' + e.message, 'err'); return; }
+  if(!file) return; // hub reposunda henüz oluşturulmamış, ilk kayıtta oluşacak
+  let payload;
+  try{ payload = JSON.parse(fromB64Utf8(file.content)); }
+  catch(e){ toast('creds.enc.json dosyası bozuk görünüyor.', 'err'); return; }
+  try{
+    const result = await decryptCredsPayload(payload, settings.cryptoKey);
+    accounts = Array.isArray(result.accounts) ? result.accounts : [];
+    appCreds = (result.appCreds && typeof result.appCreds === 'object') ? result.appCreds : {};
+    localStorage.setItem(LS_ACCOUNTS, JSON.stringify(accounts));
+    localStorage.setItem(LS_APP_CREDS, JSON.stringify(appCreds));
+    if(document.getElementById('acc_list')) renderAccountSettingsList();
+    if(currentDetailApp) renderCredRow(currentDetailApp);
+    if(!silent) toast('Hesap/SQL verileri GitHub\'dan senkronlandı.');
+  }catch(e){
+    toast('Parola yanlış olabilir — şifreli hesap/SQL verileri çözülemedi.', 'err');
+  }
+}
+function initCredsSync(){ pullCredsFromGithub(true); }
+
 async function loadManifest(){
   const file = await ghGetFile(settings.hubRepo, 'manifest.json');
   if(!file) return [];
@@ -1377,6 +1608,253 @@ function escapeHtml(s){
 function openOverlay(id){ document.getElementById(id).classList.add('open'); }
 function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', ()=> closeOverlay(b.dataset.close)));
+
+/* ============================= ACCOUNTS & SQL (per-app credentials) ============================= */
+const ICO_ACC = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>`;
+const ICO_SQL = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/></svg>`;
+
+/* ---- Settings modal: manage global account list ---- */
+function renderAccountSettingsList(){
+  const wrap = document.getElementById('acc_list');
+  if(!wrap) return;
+  if(!accounts.length){ wrap.innerHTML = `<div class="cred-empty-hint">Henüz hesap eklenmedi.</div>`; return; }
+  wrap.innerHTML = accounts.map(a => `
+    <div class="acc-row" data-id="${a.id}">
+      <div class="acc-ico">${ICO_ACC}</div>
+      <div class="acc-info">
+        <div class="acc-email">${escapeHtml(a.email)}</div>
+        ${a.password ? `<div class="acc-pass">••••••••</div>` : ``}
+      </div>
+      <div class="acc-actions">
+        <button class="acc-editBtn" title="Düzenle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+        <button class="acc-delBtn" title="Sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
+      </div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.acc-editBtn').forEach(b => b.addEventListener('click', ()=>{
+    const id = b.closest('.acc-row').dataset.id;
+    openAccForm({ editId: id });
+  }));
+  wrap.querySelectorAll('.acc-delBtn').forEach(b => b.addEventListener('click', ()=>{
+    const id = b.closest('.acc-row').dataset.id;
+    deleteAccount(id);
+  }));
+}
+function deleteAccount(id){
+  if(!confirm('Bu hesabı tamamen silmek istediğine emin misin? Bağlı olduğu tüm uygulamalardan da kaldırılacak.')) return;
+  accounts = accounts.filter(a => a.id !== id);
+  saveAccounts();
+  Object.keys(appCreds).forEach(aid => {
+    appCreds[aid].accountIds = (appCreds[aid].accountIds||[]).filter(x => x !== id);
+  });
+  saveAppCreds();
+  renderAccountSettingsList();
+  if(currentDetailApp) renderCredRow(currentDetailApp);
+  toast('Hesap silindi.');
+}
+function openAccForm(opts={}){
+  editingAccountId = opts.editId || null;
+  accFormLinkAppId = opts.linkAppId || null;
+  const emailInp = document.getElementById('acc_email');
+  const passInp = document.getElementById('acc_password');
+  const delBtn = document.getElementById('acc_deleteBtn');
+  if(editingAccountId){
+    const acc = accounts.find(a => a.id === editingAccountId);
+    document.getElementById('accFormTitle').textContent = 'Hesabı Düzenle';
+    emailInp.value = acc ? acc.email : '';
+    passInp.value = acc ? (acc.password||'') : '';
+    delBtn.style.display = 'inline-flex';
+  }else{
+    document.getElementById('accFormTitle').textContent = 'Hesap Ekle';
+    emailInp.value = ''; passInp.value = '';
+    delBtn.style.display = 'none';
+  }
+  openOverlay('accFormOverlay');
+}
+document.getElementById('acc_addBtn').addEventListener('click', ()=> openAccForm());
+document.getElementById('acc_deleteBtn').addEventListener('click', ()=>{
+  if(!editingAccountId) return;
+  closeOverlay('accFormOverlay');
+  deleteAccount(editingAccountId);
+});
+document.getElementById('acc_submit').addEventListener('click', ()=>{
+  const email = document.getElementById('acc_email').value.trim();
+  const password = document.getElementById('acc_password').value;
+  if(!email){ toast('E-posta / hesap adı girmelisin.', 'err'); return; }
+  if(editingAccountId){
+    const acc = accounts.find(a => a.id === editingAccountId);
+    if(acc){ acc.email = email; acc.password = password; }
+  }else{
+    const newAcc = { id: uid(), email, password };
+    accounts.push(newAcc);
+    if(accFormLinkAppId){
+      const cred = getAppCred(accFormLinkAppId);
+      if(!cred.accountIds.includes(newAcc.id)) cred.accountIds.push(newAcc.id);
+      saveAppCreds();
+    }
+  }
+  saveAccounts();
+  renderAccountSettingsList();
+  if(currentDetailApp) renderCredRow(currentDetailApp);
+  closeOverlay('accFormOverlay');
+  toast('Hesap kaydedildi.');
+});
+
+/* ---- App detail: cred row (chips) ---- */
+function closeCredMenu(){
+  const m = document.getElementById('credMenuEl');
+  if(m) m.remove();
+  document.removeEventListener('click', onCredMenuOutside, true);
+}
+function onCredMenuOutside(e){
+  const m = document.getElementById('credMenuEl');
+  if(m && !m.contains(e.target) && e.target.id !== 'credAddBtn') closeCredMenu();
+}
+function renderCredRow(app){
+  const row = document.getElementById('credRow');
+  if(!row) return;
+  const cred = getAppCred(app.id);
+  const accChips = cred.accountIds.map(id => accounts.find(a => a.id === id)).filter(Boolean)
+    .map(a => `<button class="cred-chip cred-account" data-type="account" data-id="${a.id}" title="Hesabı düzenle / bağlantıyı kaldır">${ICO_ACC}<span>${escapeHtml(a.email)}</span></button>`).join('');
+  const sqlChips = cred.sqls.map(s => `<button class="cred-chip cred-sql" data-type="sql" data-id="${s.id}" title="SQL'i aç">${ICO_SQL}<span>${escapeHtml(s.name||'İsimsiz SQL')}</span></button>`).join('');
+  row.innerHTML = `${accChips}${sqlChips}<button class="cred-add" id="credAddBtn" title="Hesap veya SQL ekle">+</button>`;
+
+  row.querySelectorAll('.cred-account').forEach(chip => chip.addEventListener('click', ()=>{
+    openAccForm({ editId: chip.dataset.id, linkAppId: app.id });
+  }));
+  row.querySelectorAll('.cred-sql').forEach(chip => chip.addEventListener('click', ()=>{
+    openSqlForm(app, { editId: chip.dataset.id });
+  }));
+  document.getElementById('credAddBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    closeCredMenu();
+    const menu = document.createElement('div');
+    menu.className = 'cred-menu';
+    menu.id = 'credMenuEl';
+    menu.innerHTML = `
+      <button data-choice="account"><span class="dot-ico" style="background:var(--amber);"></span>Hesap</button>
+      <button data-choice="sql"><span class="dot-ico" style="background:var(--green);"></span>SQL</button>
+    `;
+    row.appendChild(menu);
+    menu.querySelector('[data-choice="account"]').addEventListener('click', ()=>{
+      closeCredMenu();
+      openCredLinkOverlay(app);
+    });
+    menu.querySelector('[data-choice="sql"]').addEventListener('click', ()=>{
+      closeCredMenu();
+      openSqlForm(app);
+    });
+    setTimeout(()=> document.addEventListener('click', onCredMenuOutside, true), 0);
+  });
+}
+
+/* ---- Link existing / new account to an app ---- */
+function openCredLinkOverlay(app){
+  document.getElementById('credLink_email').value = '';
+  document.getElementById('credLink_password').value = '';
+  renderCredLinkList(app);
+  openOverlay('credLinkOverlay');
+}
+function renderCredLinkList(app){
+  const wrap = document.getElementById('credLinkList');
+  const emptyHint = document.getElementById('credLinkEmptyHint');
+  const cred = getAppCred(app.id);
+  emptyHint.style.display = accounts.length ? 'none' : 'block';
+  wrap.innerHTML = accounts.map(a => {
+    const linked = cred.accountIds.includes(a.id);
+    return `
+    <div class="acc-row ${linked?'linked':''}" data-id="${a.id}">
+      <div class="acc-ico">${ICO_ACC}</div>
+      <div class="acc-info"><div class="acc-email">${escapeHtml(a.email)}</div></div>
+      <button class="link-btn ${linked?'linked':''}" data-id="${a.id}">${linked?'Bağlı ✓ · Kaldır':'Bağla'}</button>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.link-btn').forEach(b => b.addEventListener('click', ()=>{
+    const id = b.dataset.id;
+    const c = getAppCred(app.id);
+    if(c.accountIds.includes(id)) c.accountIds = c.accountIds.filter(x => x !== id);
+    else c.accountIds.push(id);
+    saveAppCreds();
+    renderCredLinkList(app);
+    renderCredRow(app);
+  }));
+}
+document.getElementById('credLink_addBtn').addEventListener('click', ()=>{
+  if(!currentDetailApp) return;
+  const email = document.getElementById('credLink_email').value.trim();
+  const password = document.getElementById('credLink_password').value;
+  if(!email){ toast('E-posta / hesap adı girmelisin.', 'err'); return; }
+  const newAcc = { id: uid(), email, password };
+  accounts.push(newAcc);
+  saveAccounts();
+  const cred = getAppCred(currentDetailApp.id);
+  cred.accountIds.push(newAcc.id);
+  saveAppCreds();
+  document.getElementById('credLink_email').value = '';
+  document.getElementById('credLink_password').value = '';
+  renderCredLinkList(currentDetailApp);
+  renderCredRow(currentDetailApp);
+  renderAccountSettingsList();
+  toast('Hesap eklendi ve bağlandı.');
+});
+
+/* ---- SQL entries (per app) ---- */
+function openSqlForm(app, opts={}){
+  editingSqlId = opts.editId || null;
+  const nameInp = document.getElementById('sql_name');
+  const descInp = document.getElementById('sql_desc');
+  const contentInp = document.getElementById('sql_content');
+  const delBtn = document.getElementById('sql_deleteBtn');
+  if(editingSqlId){
+    const cred = getAppCred(app.id);
+    const sql = cred.sqls.find(s => s.id === editingSqlId);
+    document.getElementById('sqlFormTitle').textContent = 'SQL Düzenle';
+    nameInp.value = sql ? (sql.name||'') : '';
+    descInp.value = sql ? (sql.desc||'') : '';
+    contentInp.value = sql ? (sql.content||'') : '';
+    delBtn.style.display = 'inline-flex';
+  }else{
+    document.getElementById('sqlFormTitle').textContent = 'SQL Ekle';
+    nameInp.value = ''; descInp.value = ''; contentInp.value = '';
+    delBtn.style.display = 'none';
+  }
+  openOverlay('sqlFormOverlay');
+}
+document.getElementById('sql_copyBtn').addEventListener('click', async ()=>{
+  const content = document.getElementById('sql_content').value;
+  try{
+    await navigator.clipboard.writeText(content);
+    toast('SQL kopyalandı.');
+  }catch(err){ toast('Kopyalanamadı: '+err.message, 'err'); }
+});
+document.getElementById('sql_deleteBtn').addEventListener('click', ()=>{
+  if(!currentDetailApp || !editingSqlId) return;
+  if(!confirm('Bu SQL kaydını silmek istediğine emin misin?')) return;
+  const cred = getAppCred(currentDetailApp.id);
+  cred.sqls = cred.sqls.filter(s => s.id !== editingSqlId);
+  saveAppCreds();
+  renderCredRow(currentDetailApp);
+  closeOverlay('sqlFormOverlay');
+  toast('SQL silindi.');
+});
+document.getElementById('sql_submit').addEventListener('click', ()=>{
+  if(!currentDetailApp) return;
+  const name = document.getElementById('sql_name').value.trim();
+  const desc = document.getElementById('sql_desc').value.trim();
+  const content = document.getElementById('sql_content').value;
+  if(!name){ toast('SQL için bir isim girmelisin.', 'err'); return; }
+  const cred = getAppCred(currentDetailApp.id);
+  if(editingSqlId){
+    const sql = cred.sqls.find(s => s.id === editingSqlId);
+    if(sql){ sql.name = name; sql.desc = desc; sql.content = content; }
+  }else{
+    cred.sqls.push({ id: uid(), name, desc, content });
+  }
+  saveAppCreds();
+  renderCredRow(currentDetailApp);
+  closeOverlay('sqlFormOverlay');
+  toast('SQL kaydedildi.');
+});
 
 document.getElementById('newAppBtn').addEventListener('click', ()=>{
   if(!settings.token || !settings.username){ toast('Önce ayarlardan GitHub bilgilerini gir.', 'err'); openOverlay('settingsOverlay'); return; }
@@ -1602,6 +2080,8 @@ function loadSettingsIntoForm(){
   document.getElementById('st_autoscan').checked = !!settings.autoScan;
   document.getElementById('st_clearcache_status').textContent = '';
   document.querySelectorAll('#settingsOverlay .radio-opt').forEach(o => o.classList.toggle('active', o.dataset.mode === settings.mode));
+  document.getElementById('st_cryptoKey').value = settings.cryptoKey || '';
+  renderAccountSettingsList();
 }
 document.getElementById('settingsBtn').addEventListener('click', ()=>{ loadSettingsIntoForm(); openOverlay('settingsOverlay'); });
 document.querySelectorAll('#settingsOverlay .radio-opt').forEach(o => o.addEventListener('click', ()=>{
@@ -1630,11 +2110,13 @@ document.getElementById('st_save').addEventListener('click', async ()=>{
     settings.hubRepo = document.getElementById('st_hubrepo').value.trim() || 'vonhub-console-data';
     settings.mode = document.querySelector('#settingsOverlay .radio-opt.active')?.dataset.mode || 'single';
     settings.autoScan = document.getElementById('st_autoscan').checked;
+    settings.cryptoKey = document.getElementById('st_cryptoKey').value;
     localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
     toast('Ayarlar kaydedildi: @' + settings.username);
     closeOverlay('settingsOverlay');
     checkTokenBanner(); updateRepoBadge();
     if(settings.token && settings.username) refreshFromGithub();
+    if(settings.token && settings.username && settings.cryptoKey) initCredsSync();
   }catch(e){
     toast('Kaydedilemedi: ' + e.message, 'err');
   }finally{
@@ -1848,6 +2330,7 @@ function renderDetail(app){
           ${app.category ? `<span class="tag-pill">${escapeHtml(app.category)}</span>` : ''}
           ${app.group ? `<span class="tag-pill group">${escapeHtml(app.group)}</span>` : ''}
         </div>
+        <div class="cred-row" id="credRow"></div>
         <div class="detail-desc" id="detailDesc">${escapeHtml(app.description||'Açıklama eklenmemiş.')}</div>
         ${app.description && app.description.length > 110 ? `<button class="detail-desc-more" id="detailDescMore">Daha fazla göster</button>` : ''}
         <div class="detail-meta" style="margin-top:10px;">
@@ -2045,8 +2528,10 @@ function renderDetail(app){
     </div>
   `;
 
+  currentDetailApp = app;
   renderVersionList(app);
   loadDetailMeta(app);
+  renderCredRow(app);
 
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === activeDetailTab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === activeDetailTab));
@@ -2725,6 +3210,7 @@ checkTokenBanner(); updateRepoBadge();
 })();
 
 refreshFromGithub();
+if(settings.token && settings.username && settings.hubRepo && settings.cryptoKey) initCredsSync();
 autoScanAndUseRepo();
 
 /* Mobile FAB → aynı "Yeni Uygulama" akışını tetikler */
