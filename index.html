@@ -265,6 +265,24 @@
   .cred-account:hover{ background:rgba(232,165,63,.2); }
   .cred-sql{ background:rgba(62,207,126,.12); color:var(--green); border-color:rgba(62,207,126,.28); }
   .cred-sql:hover{ background:rgba(62,207,126,.2); }
+  .cred-supabase{ background:rgba(62,207,126,.12); color:var(--green); border-color:rgba(62,207,126,.28); }
+  .cred-supabase:hover{ background:rgba(62,207,126,.2); }
+  .cred-custom:hover{ filter:brightness(1.25); }
+  input[type=color].color-input{
+    -webkit-appearance:none; appearance:none; padding:3px; height:38px; cursor:pointer;
+  }
+  input[type=color].color-input::-webkit-color-swatch-wrapper{ padding:0; }
+  input[type=color].color-input::-webkit-color-swatch{ border:none; border-radius:6px; }
+  .custom-fields-list{ display:flex; flex-direction:column; gap:8px; }
+  .custom-field-row{ display:flex; gap:8px; align-items:center; }
+  .custom-field-row input{ flex:1; min-width:0; }
+  .custom-field-row .cf-removeBtn{
+    flex-shrink:0; width:34px; height:34px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface-2); border:1px solid var(--border-soft); color:var(--text-faint);
+  }
+  .custom-field-row .cf-removeBtn:hover{ color:#ff8a7a; border-color:var(--red-dim); background:rgba(232,67,47,.1); }
+  .cred-empty-fields{ font-size:11.5px; color:var(--text-faint); }
   .cred-add{
     display:inline-flex; align-items:center; justify-content:center;
     width:28px; height:28px; padding:0; border-radius:50%;
@@ -370,6 +388,16 @@
   }
   input[type=text]:focus, input[type=password]:focus, textarea:focus, select:focus{ border-color:var(--red); }
   textarea{ resize:vertical; min-height:70px; line-height:1.5;}
+
+  /* ---------- PASSWORD REVEAL WRAP ---------- */
+  .pw-wrap{ position:relative; }
+  .pw-wrap input[type=password], .pw-wrap input[type=text]{ padding-right:40px; }
+  .pw-toggle{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    width:28px; height:28px; border-radius:7px; background:none; border:none;
+    color:var(--text-faint); display:flex; align-items:center; justify-content:center;
+  }
+  .pw-toggle:hover{ color:var(--text); background:var(--surface-3); }
   .radio-row{ display:flex; gap:8px; }
   .radio-opt{
     flex:1; border:1px solid var(--border); border-radius:10px; padding:10px 12px; cursor:pointer;
@@ -1019,7 +1047,12 @@
     <div class="modal-body">
       <div class="field">
         <label>GitHub Personal Access Token</label>
-        <input type="password" id="st_token" placeholder="ghp_xxxxxxxxxxxx">
+        <div class="pw-wrap">
+          <input type="password" id="st_token" placeholder="ghp_xxxxxxxxxxxx">
+          <button type="button" class="pw-toggle" data-toggle-for="st_token" title="Göster/Gizle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
         <div class="hint">Repo oluşturma/yazma ve Pages izinleri için "repo" scope'u yeterli. Token sadece bu tarayıcıda (localStorage) saklanır, koda gömülmez.</div>
       </div>
       <div class="field">
@@ -1138,6 +1171,50 @@
   </div>
 </div>
 
+<!-- Supabase Add/Edit Modal -->
+<div class="overlay" id="supabaseFormOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2 id="supabaseFormTitle">Supabase Ekle</h2><button class="close-x" data-close="supabaseFormOverlay">&times;</button></div>
+    <div class="modal-body">
+      <div class="field"><label>İsim <span style="color:var(--text-faint); font-weight:400;">(zorunlu değil)</span></label><input type="text" id="sb_name" placeholder="ör. Prod Supabase"></div>
+      <div class="field"><label>Project ID</label><input type="text" id="sb_projectId" placeholder="ör. abcxyzcompanyid"></div>
+      <div class="field"><label>API Key</label><textarea id="sb_apiKey" placeholder="eyJhbGciOi..." style="min-height:80px; font-family:'JetBrains Mono',monospace; font-size:12px;"></textarea></div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn btn-ghost" id="sb_deleteBtn" style="display:none; color:#ff8a7a;">Sil</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn btn-ghost" data-close="supabaseFormOverlay">Vazgeç</button>
+        <button class="btn btn-primary" id="sb_submit">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom (Özel) Add/Edit Modal -->
+<div class="overlay" id="customFormOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2 id="customFormTitle">Özel Ekle</h2><button class="close-x" data-close="customFormOverlay">&times;</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Buton adı</label><input type="text" id="cu_name" placeholder="ör. FTP Bilgileri"></div>
+        <div class="field" style="flex:0 0 72px;"><label>Renk</label><input type="color" id="cu_color" value="#4f9ef2" class="color-input"></div>
+      </div>
+      <div class="field">
+        <label>Alanlar <span style="color:var(--text-faint); font-weight:400;">(gerektiği kadar ekle)</span></label>
+        <div id="cu_fields" class="custom-fields-list"></div>
+        <button class="btn btn-sm btn-ghost" id="cu_addFieldBtn" type="button" style="align-self:flex-start; margin-top:2px;">+ Alan ekle</button>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn btn-ghost" id="cu_deleteBtn" style="display:none; color:#ff8a7a;">Sil</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn btn-ghost" data-close="customFormOverlay">Vazgeç</button>
+        <button class="btn btn-primary" id="cu_submit">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
@@ -1156,20 +1233,32 @@ let apps = JSON.parse(localStorage.getItem(LS_MANIFEST_CACHE) || '[]');
 
 /* ---- accounts & sql (local-only, never pushed to GitHub manifest) ---- */
 let accounts = JSON.parse(localStorage.getItem(LS_ACCOUNTS) || '[]');           // [{id,email,password}]
-let appCreds = JSON.parse(localStorage.getItem(LS_APP_CREDS) || '{}');          // { [appId]: {accountIds:[], sqls:[{id,name,desc,content}]} }
+let appCreds = JSON.parse(localStorage.getItem(LS_APP_CREDS) || '{}');          // { [appId]: {accountIds:[], sqls:[{id,name,desc,content}], supabases:[{id,name,projectId,apiKey}], customs:[{id,name,color,fields:[{id,key,value}]}]} }
 let currentDetailApp = null;
 let editingAccountId = null;      // when editing an existing account in accFormOverlay
 let accFormLinkAppId = null;      // if set, opened from an app's cred row (adds "unlink" context)
 let editingSqlId = null;          // when editing an existing sql entry in sqlFormOverlay
+let editingSupabaseId = null;     // when editing an existing supabase entry in supabaseFormOverlay
+let editingCustomId = null;       // when editing an existing custom entry in customFormOverlay
+let cuFieldRows = [];             // working list of {id,key,value} while customFormOverlay is open
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function saveAccounts(){ localStorage.setItem(LS_ACCOUNTS, JSON.stringify(accounts)); queueCredsSync(); }
 function saveAppCreds(){ localStorage.setItem(LS_APP_CREDS, JSON.stringify(appCreds)); queueCredsSync(); }
 function getAppCred(appId){
-  if(!appCreds[appId]) appCreds[appId] = { accountIds:[], sqls:[] };
+  if(!appCreds[appId]) appCreds[appId] = { accountIds:[], sqls:[], supabases:[], customs:[] };
   if(!Array.isArray(appCreds[appId].accountIds)) appCreds[appId].accountIds = [];
   if(!Array.isArray(appCreds[appId].sqls)) appCreds[appId].sqls = [];
+  if(!Array.isArray(appCreds[appId].supabases)) appCreds[appId].supabases = [];
+  if(!Array.isArray(appCreds[appId].customs)) appCreds[appId].customs = [];
   return appCreds[appId];
+}
+function hexToRgba(hex, alpha){
+  let h = (hex||'#4f9ef2').replace('#','');
+  if(h.length===3) h = h.split('').map(c=>c+c).join('');
+  const num = parseInt(h,16);
+  const r = (num>>16)&255, g=(num>>8)&255, b=num&255;
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 let pendingFile = null;      // {name, content} - single html for new app
 let pendingMultiFiles = null; // [{path, content}] for new app
@@ -1609,9 +1698,22 @@ function openOverlay(id){ document.getElementById(id).classList.add('open'); }
 function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', ()=> closeOverlay(b.dataset.close)));
 
+/* ---- password/token show-hide toggles ---- */
+const ICO_EYE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const ICO_EYE_OFF = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a20.6 20.6 0 015.06-6.06M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 8 11 8a20.6 20.6 0 01-3.22 4.44"/><path d="M14.12 14.12a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+document.querySelectorAll('.pw-toggle').forEach(btn => btn.addEventListener('click', ()=>{
+  const inp = document.getElementById(btn.dataset.toggleFor);
+  if(!inp) return;
+  const showing = inp.type === 'text';
+  inp.type = showing ? 'password' : 'text';
+  btn.innerHTML = showing ? ICO_EYE : ICO_EYE_OFF;
+}));
+
 /* ============================= ACCOUNTS & SQL (per-app credentials) ============================= */
 const ICO_ACC = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>`;
 const ICO_SQL = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/></svg>`;
+const ICO_SUPABASE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13.2 23.4c-.6.75-1.8.33-1.8-.63v-8.6H4.9c-1.35 0-2.1-1.56-1.26-2.6L10.8.6c.6-.75 1.8-.33 1.8.63v8.6h6.5c1.35 0 2.1 1.56 1.26 2.6l-7 8.97z"/></svg>`;
+const ICO_CUSTOM = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>`;
 
 /* ---- Settings modal: manage global account list ---- */
 function renderAccountSettingsList(){
@@ -1717,13 +1819,21 @@ function renderCredRow(app){
   const accChips = cred.accountIds.map(id => accounts.find(a => a.id === id)).filter(Boolean)
     .map(a => `<button class="cred-chip cred-account" data-type="account" data-id="${a.id}" title="Hesabı düzenle / bağlantıyı kaldır">${ICO_ACC}<span>${escapeHtml(a.email)}</span></button>`).join('');
   const sqlChips = cred.sqls.map(s => `<button class="cred-chip cred-sql" data-type="sql" data-id="${s.id}" title="SQL'i aç">${ICO_SQL}<span>${escapeHtml(s.name||'İsimsiz SQL')}</span></button>`).join('');
-  row.innerHTML = `${accChips}${sqlChips}<button class="cred-add" id="credAddBtn" title="Hesap veya SQL ekle">+</button>`;
+  const supabaseChips = cred.supabases.map(s => `<button class="cred-chip cred-supabase" data-type="supabase" data-id="${s.id}" title="Supabase'i aç">${ICO_SUPABASE}<span>${escapeHtml(s.name||'Supabase')}</span></button>`).join('');
+  const customChips = cred.customs.map(c => `<button class="cred-chip cred-custom" data-type="custom" data-id="${c.id}" title="Aç" style="background:${hexToRgba(c.color,.14)}; color:${c.color||'var(--blue)'}; border-color:${hexToRgba(c.color,.3)};">${ICO_CUSTOM}<span>${escapeHtml(c.name||'Özel')}</span></button>`).join('');
+  row.innerHTML = `${accChips}${sqlChips}${supabaseChips}${customChips}<button class="cred-add" id="credAddBtn" title="Hesap, SQL, Supabase veya Özel ekle">+</button>`;
 
   row.querySelectorAll('.cred-account').forEach(chip => chip.addEventListener('click', ()=>{
     openAccForm({ editId: chip.dataset.id, linkAppId: app.id });
   }));
   row.querySelectorAll('.cred-sql').forEach(chip => chip.addEventListener('click', ()=>{
     openSqlForm(app, { editId: chip.dataset.id });
+  }));
+  row.querySelectorAll('.cred-supabase').forEach(chip => chip.addEventListener('click', ()=>{
+    openSupabaseForm(app, { editId: chip.dataset.id });
+  }));
+  row.querySelectorAll('.cred-custom').forEach(chip => chip.addEventListener('click', ()=>{
+    openCustomForm(app, { editId: chip.dataset.id });
   }));
   document.getElementById('credAddBtn').addEventListener('click', (e)=>{
     e.stopPropagation();
@@ -1734,6 +1844,8 @@ function renderCredRow(app){
     menu.innerHTML = `
       <button data-choice="account"><span class="dot-ico" style="background:var(--amber);"></span>Hesap</button>
       <button data-choice="sql"><span class="dot-ico" style="background:var(--green);"></span>SQL</button>
+      <button data-choice="supabase"><span class="dot-ico" style="background:var(--green);"></span>Supabase API</button>
+      <button data-choice="custom"><span class="dot-ico" style="background:var(--blue);"></span>Özel</button>
     `;
     row.appendChild(menu);
     menu.querySelector('[data-choice="account"]').addEventListener('click', ()=>{
@@ -1743,6 +1855,14 @@ function renderCredRow(app){
     menu.querySelector('[data-choice="sql"]').addEventListener('click', ()=>{
       closeCredMenu();
       openSqlForm(app);
+    });
+    menu.querySelector('[data-choice="supabase"]').addEventListener('click', ()=>{
+      closeCredMenu();
+      openSupabaseForm(app);
+    });
+    menu.querySelector('[data-choice="custom"]').addEventListener('click', ()=>{
+      closeCredMenu();
+      openCustomForm(app);
     });
     setTimeout(()=> document.addEventListener('click', onCredMenuOutside, true), 0);
   });
@@ -1854,6 +1974,142 @@ document.getElementById('sql_submit').addEventListener('click', ()=>{
   renderCredRow(currentDetailApp);
   closeOverlay('sqlFormOverlay');
   toast('SQL kaydedildi.');
+});
+
+/* ---- Supabase API entries (per app) ---- */
+function openSupabaseForm(app, opts={}){
+  editingSupabaseId = opts.editId || null;
+  const nameInp = document.getElementById('sb_name');
+  const projectInp = document.getElementById('sb_projectId');
+  const apiKeyInp = document.getElementById('sb_apiKey');
+  const delBtn = document.getElementById('sb_deleteBtn');
+  if(editingSupabaseId){
+    const cred = getAppCred(app.id);
+    const sb = cred.supabases.find(s => s.id === editingSupabaseId);
+    document.getElementById('supabaseFormTitle').textContent = 'Supabase Düzenle';
+    nameInp.value = sb ? (sb.name||'') : '';
+    projectInp.value = sb ? (sb.projectId||'') : '';
+    apiKeyInp.value = sb ? (sb.apiKey||'') : '';
+    delBtn.style.display = 'inline-flex';
+  }else{
+    document.getElementById('supabaseFormTitle').textContent = 'Supabase Ekle';
+    nameInp.value = ''; projectInp.value = ''; apiKeyInp.value = '';
+    delBtn.style.display = 'none';
+  }
+  openOverlay('supabaseFormOverlay');
+}
+document.getElementById('sb_deleteBtn').addEventListener('click', ()=>{
+  if(!currentDetailApp || !editingSupabaseId) return;
+  if(!confirm('Bu Supabase kaydını silmek istediğine emin misin?')) return;
+  const cred = getAppCred(currentDetailApp.id);
+  cred.supabases = cred.supabases.filter(s => s.id !== editingSupabaseId);
+  saveAppCreds();
+  renderCredRow(currentDetailApp);
+  closeOverlay('supabaseFormOverlay');
+  toast('Supabase kaydı silindi.');
+});
+document.getElementById('sb_submit').addEventListener('click', ()=>{
+  if(!currentDetailApp) return;
+  const name = document.getElementById('sb_name').value.trim();
+  const projectId = document.getElementById('sb_projectId').value.trim();
+  const apiKey = document.getElementById('sb_apiKey').value.trim();
+  if(!projectId){ toast('Project ID girmelisin.', 'err'); return; }
+  if(!apiKey){ toast('API Key girmelisin.', 'err'); return; }
+  const cred = getAppCred(currentDetailApp.id);
+  if(editingSupabaseId){
+    const sb = cred.supabases.find(s => s.id === editingSupabaseId);
+    if(sb){ sb.name = name; sb.projectId = projectId; sb.apiKey = apiKey; }
+  }else{
+    cred.supabases.push({ id: uid(), name, projectId, apiKey });
+  }
+  saveAppCreds();
+  renderCredRow(currentDetailApp);
+  closeOverlay('supabaseFormOverlay');
+  toast('Supabase kaydedildi.');
+});
+
+/* ---- Custom (Özel) entries (per app) — dynamic key/value fields ---- */
+function cuRenderFields(){
+  const wrap = document.getElementById('cu_fields');
+  if(!cuFieldRows.length){
+    wrap.innerHTML = `<div class="cred-empty-fields">Henüz alan yok. Aşağıdan "+ Alan ekle" ile ekleyebilirsin.</div>`;
+    return;
+  }
+  wrap.innerHTML = cuFieldRows.map(f => `
+    <div class="custom-field-row" data-id="${f.id}">
+      <input type="text" class="cf-key" placeholder="Alan adı (ör. Kullanıcı adı)" value="${escapeHtml(f.key||'')}">
+      <input type="text" class="cf-value" placeholder="Değer" value="${escapeHtml(f.value||'')}">
+      <button type="button" class="cf-removeBtn" title="Alanı kaldır">&times;</button>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.custom-field-row').forEach(rowEl => {
+    const id = rowEl.dataset.id;
+    rowEl.querySelector('.cf-key').addEventListener('input', (e)=>{
+      const f = cuFieldRows.find(x=>x.id===id); if(f) f.key = e.target.value;
+    });
+    rowEl.querySelector('.cf-value').addEventListener('input', (e)=>{
+      const f = cuFieldRows.find(x=>x.id===id); if(f) f.value = e.target.value;
+    });
+    rowEl.querySelector('.cf-removeBtn').addEventListener('click', ()=>{
+      cuFieldRows = cuFieldRows.filter(x=>x.id!==id);
+      cuRenderFields();
+    });
+  });
+}
+document.getElementById('cu_addFieldBtn').addEventListener('click', ()=>{
+  cuFieldRows.push({ id: uid(), key:'', value:'' });
+  cuRenderFields();
+});
+function openCustomForm(app, opts={}){
+  editingCustomId = opts.editId || null;
+  const nameInp = document.getElementById('cu_name');
+  const colorInp = document.getElementById('cu_color');
+  const delBtn = document.getElementById('cu_deleteBtn');
+  if(editingCustomId){
+    const cred = getAppCred(app.id);
+    const cu = cred.customs.find(c => c.id === editingCustomId);
+    document.getElementById('customFormTitle').textContent = 'Özel Düzenle';
+    nameInp.value = cu ? (cu.name||'') : '';
+    colorInp.value = cu ? (cu.color||'#4f9ef2') : '#4f9ef2';
+    cuFieldRows = cu ? (cu.fields||[]).map(f => ({ id: f.id || uid(), key: f.key, value: f.value })) : [];
+    delBtn.style.display = 'inline-flex';
+  }else{
+    document.getElementById('customFormTitle').textContent = 'Özel Ekle';
+    nameInp.value = ''; colorInp.value = '#4f9ef2';
+    cuFieldRows = [];
+    delBtn.style.display = 'none';
+  }
+  cuRenderFields();
+  openOverlay('customFormOverlay');
+}
+document.getElementById('cu_deleteBtn').addEventListener('click', ()=>{
+  if(!currentDetailApp || !editingCustomId) return;
+  if(!confirm('Bu özel kaydı silmek istediğine emin misin?')) return;
+  const cred = getAppCred(currentDetailApp.id);
+  cred.customs = cred.customs.filter(c => c.id !== editingCustomId);
+  saveAppCreds();
+  renderCredRow(currentDetailApp);
+  closeOverlay('customFormOverlay');
+  toast('Özel kayıt silindi.');
+});
+document.getElementById('cu_submit').addEventListener('click', ()=>{
+  if(!currentDetailApp) return;
+  const name = document.getElementById('cu_name').value.trim();
+  const color = document.getElementById('cu_color').value || '#4f9ef2';
+  if(!name){ toast('Buton adı girmelisin.', 'err'); return; }
+  const fields = cuFieldRows.filter(f => (f.key||'').trim() || (f.value||'').trim())
+    .map(f => ({ id:f.id, key:(f.key||'').trim(), value:f.value||'' }));
+  const cred = getAppCred(currentDetailApp.id);
+  if(editingCustomId){
+    const cu = cred.customs.find(c => c.id === editingCustomId);
+    if(cu){ cu.name = name; cu.color = color; cu.fields = fields; }
+  }else{
+    cred.customs.push({ id: uid(), name, color, fields });
+  }
+  saveAppCreds();
+  renderCredRow(currentDetailApp);
+  closeOverlay('customFormOverlay');
+  toast('Özel kayıt kaydedildi.');
 });
 
 document.getElementById('newAppBtn').addEventListener('click', ()=>{
@@ -2075,7 +2331,11 @@ function atobToBinaryStr(b64){
 /* ============================= SETTINGS ============================= */
 function loadSettingsIntoForm(){
   document.getElementById('st_username').value = settings.username;
-  document.getElementById('st_token').value = settings.token;
+  const stTokenInp = document.getElementById('st_token');
+  stTokenInp.value = settings.token;
+  stTokenInp.type = 'password';
+  const stTokenToggle = document.querySelector('.pw-toggle[data-toggle-for="st_token"]');
+  if(stTokenToggle) stTokenToggle.innerHTML = ICO_EYE;
   document.getElementById('st_hubrepo').value = settings.hubRepo;
   document.getElementById('st_autoscan').checked = !!settings.autoScan;
   document.getElementById('st_clearcache_status').textContent = '';
