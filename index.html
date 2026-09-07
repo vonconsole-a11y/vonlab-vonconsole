@@ -869,6 +869,7 @@
     </div>
     <div class="auth-form">
       <div class="auth-error" id="authError"></div>
+      <div class="field"><label>Kurulum anahtarı</label><input type="password" id="auth_setupkey" placeholder="sadece ilk kurulumda gerekir" autocomplete="off"></div>
       <div class="field"><label>Kullanıcı adı</label><input type="text" id="auth_username" placeholder="kullanıcı adı" autocomplete="username"></div>
       <div class="field"><label>Şifre</label><input type="password" id="auth_password" placeholder="••••••••" autocomplete="current-password"></div>
       <button class="btn btn-primary auth-submit" id="auth_submit">Giriş Yap</button>
@@ -1469,23 +1470,35 @@ function fromB64Utf8(b64){
 }
 
 /* ============================= BOOTSTRAP ACCOUNT (ilk giriş için) =============================
-   Bu blok, kullanıcı henüz hiçbir GitHub token'ı girmemişken "Account" dosyasını okuyabilmek
-   için kullanılan tek amaçlı, salt-okunur bir bağlantıdır. settings.token'dan tamamen ayrıdır.
-   ÖNEMLİ: BOOTSTRAP_TOKEN bu HTML dosyasının içinde düz metin olarak durur — sayfayı görebilen
-   herkes bu token'ı görebilir. Bu yüzden buraya sadece "vonlab-console-data" reposuna salt-okunur
-   (read-only, sadece Contents: Read) erişimi olan bir fine-grained token koy; asla tam yetkili
-   ("repo" kapsamlı) bir classic token koyma. */
+   "Account" dosyası artık private bir repoda olduğu için, onu okuyabilmek için bir GitHub token'a
+   ihtiyaç var — ama bu token'ı düz metin olarak koda yazmak, sayfayı indiren herkesin onu görüp
+   deponu okumasına izin verir. Bunun yerine bu token'ı AES-GCM ile şifreleyip BOOTSTRAP_ENC
+   sabitine gömüyoruz. Şifreyi çözecek "kurulum anahtarı" ise kodun HİÇBİR yerinde yazmaz —
+   sadece giriş ekranında kullanıcıdan istenir. Yani bu dosyayı eline geçiren biri, kurulum
+   anahtarını bilmeden içindeki gerçek token'a ulaşamaz.
+   BOOTSTRAP_ENC değerini, birlikte verdiğim "sifrele.html" aracıyla üretiyorsun: oraya gerçek
+   token'ı ve kendi belirleyeceğin kurulum anahtarını yazıyorsun, çıkan JSON'u aşağıya yapıştırıyorsun. */
 const ACCOUNT_OWNER = 'vonconsole-a11y';
 const ACCOUNT_REPO  = 'vonlab-console-data';
 const ACCOUNT_PATH  = 'Account';
-const BOOTSTRAP_TOKEN = 'PASTE_READONLY_TOKEN_HERE'; // <-- bunu sadece bu repoya salt-okunur erişimi olan token ile değiştir
+const BOOTSTRAP_ENC = {
+  "v": 1,
+  "salt": "OWjOc/2rYhbh5HX5jviWHg==",
+  "iv": "IP+3zGyzUhY0Y21h",
+  "data": "7c6zDWGGWFUuPwUf6W7uAh8YxUUQ9IBhwWlP/JHtV30ci7qi8CdAD9bJ9MXvEsrlnHpnvKc3RDiI1g=="
+}; // <-- sifrele.html çıktısını buraya yapıştır
 
-async function fetchAccountFile(){
-  if(!BOOTSTRAP_TOKEN || BOOTSTRAP_TOKEN === 'PASTE_READONLY_TOKEN_HERE'){
-    throw new Error('BOOTSTRAP_TOKEN henüz ayarlanmadı (koddaki BOOTSTRAP_TOKEN sabitini doldur).');
+async function decryptBootstrapToken(setupKey){
+  if(!BOOTSTRAP_ENC || !BOOTSTRAP_ENC.data){
+    throw new Error('BOOTSTRAP_ENC henüz ayarlanmadı (sifrele.html ile üretip koda yapıştır).');
   }
+  // decryptCredsPayload/deriveCredsKey aşağıda "ENCRYPTED CREDS SYNC" bölümünde tanımlı;
+  // fonksiyon bildirimleri hoisted olduğu için burada da güvenle kullanılabiliyor.
+  return await decryptCredsPayload(BOOTSTRAP_ENC, setupKey);
+}
+async function fetchAccountFile(bootstrapToken){
   const res = await fetch(`${GH}/repos/${ACCOUNT_OWNER}/${ACCOUNT_REPO}/contents/${ACCOUNT_PATH}`, {
-    headers: { 'Authorization': 'token ' + BOOTSTRAP_TOKEN, 'Accept': 'application/vnd.github+json' },
+    headers: { 'Authorization': 'token ' + bootstrapToken, 'Accept': 'application/vnd.github+json' },
     cache: 'no-store'
   });
   if(!res.ok){
@@ -3678,17 +3691,24 @@ async function runFirstTimeSetup(){
 }
 
 document.getElementById('auth_submit').addEventListener('click', async ()=>{
+  const setupKey = document.getElementById('auth_setupkey').value;
   const username = document.getElementById('auth_username').value.trim();
   const password = document.getElementById('auth_password').value;
   setAuthError('');
-  if(!username || !password){ setAuthError('Kullanıcı adı ve şifre gerekli.'); return; }
+  if(!setupKey || !username || !password){ setAuthError('Tüm alanları doldurmalısın.'); return; }
   const btn = document.getElementById('auth_submit');
   const orig = btn.innerHTML;
   btn.innerHTML = '<span class="spinner"></span> Kontrol ediliyor'; btn.disabled = true;
   try{
-    const data = await fetchAccountFile();
+    let bootstrapToken;
+    try{
+      bootstrapToken = await decryptBootstrapToken(setupKey);
+    }catch(e){
+      setAuthError('Giriş bilgileri hatalı.'); return;
+    }
+    const data = await fetchAccountFile(bootstrapToken);
     const user = findAccountUser(data, username, password);
-    if(!user){ setAuthError('Kullanıcı adı veya şifre hatalı.'); return; }
+    if(!user){ setAuthError('Giriş bilgileri hatalı.'); return; }
     const gh = data.github || {};
     if(!gh.token){ setAuthError('Account dosyasında "github.token" bulunamadı.'); return; }
     settings.token = gh.token;
@@ -3707,6 +3727,9 @@ document.getElementById('auth_submit').addEventListener('click', async ()=>{
 });
 document.getElementById('auth_password').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') document.getElementById('auth_submit').click();
+});
+document.getElementById('auth_setupkey').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('auth_username').focus();
 });
 document.getElementById('auth_username').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') document.getElementById('auth_password').focus();
