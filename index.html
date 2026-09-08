@@ -779,56 +779,46 @@
   .cmdk-empty{ text-align:center; padding:26px 10px; color:var(--text-faint); font-size:12.5px; }
   .cmdk-group-label{ font-size:10.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-faint); padding:10px 10px 4px; }
 
-  /* ---------- BOTTOM NAV (mobile) ---------- */
-  .bottom-nav{
-    display:none;
+  /* ---------- MOBILE MENU (hamburger + left drawer) ---------- */
+  .mobile-menu-btn{ display:none; }
+  .mobile-drawer-scrim{
+    position:fixed; inset:0; background:rgba(4,4,5,.65); backdrop-filter:blur(2px);
+    z-index:70; opacity:0; pointer-events:none; transition:.2s opacity;
   }
-  .fab-new{
-    display:none;
+  .mobile-drawer-scrim.open{ opacity:1; pointer-events:auto; }
+  .mobile-drawer{
+    position:fixed; top:0; left:0; bottom:0; z-index:71;
+    width:84%; max-width:300px; background:var(--bg-2);
+    border-right:1px solid var(--border-soft);
+    display:flex; flex-direction:column; overflow-y:auto;
+    transform:translateX(-100%); transition:.22s transform;
+    box-shadow:0 0 40px rgba(0,0,0,.5);
   }
+  .mobile-drawer.open{ transform:translateX(0); }
+  .mobile-drawer-head{
+    display:flex; align-items:center; gap:11px; padding:18px 16px 16px;
+    border-bottom:1px solid var(--border-soft); flex-shrink:0;
+  }
+  .mobile-drawer-head .brand-name{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; }
+  .mobile-drawer-head .brand-sub{ font-size:10px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; letter-spacing:.5px; text-transform:uppercase; margin-top:1px; }
+  .mobile-drawer-head .close-x{ margin-left:auto; }
+  .mobile-drawer-nav{ padding:14px 12px; display:flex; flex-direction:column; gap:2px; }
 
   @media (max-width:900px){
     .sidebar{ display:none; }
     .app-shell{ flex-direction:column; }
     .main-area{ width:100%; }
+    .mobile-menu-btn{ display:inline-flex; }
+    .topbar-right{ display:none; }
   }
 
   /* ---------- TABLET / SMALL LAPTOP ---------- */
   @media (max-width:760px){
-    .page{ padding:20px 16px 96px; }
+    .page{ padding:20px 16px 40px; }
     .grid{ grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); }
     .stat-row{ grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); }
     .dash-grid{ grid-template-columns:repeat(2, 1fr); }
     .dash-cols{ grid-template-columns:1fr; }
-
-    /* Bottom tab bar replaces the sidebar */
-    .bottom-nav{
-      display:flex; align-items:stretch; justify-content:space-around;
-      position:fixed; left:0; right:0; bottom:0; z-index:60;
-      background:rgba(10,10,12,.92); backdrop-filter:blur(16px);
-      border-top:1px solid var(--border-soft);
-      padding:6px 4px calc(6px + env(safe-area-inset-bottom));
-    }
-    .bottom-nav .side-item{
-      flex-direction:column; gap:3px; padding:6px 4px; border-radius:10px;
-      font-size:10.5px; font-weight:600; text-align:center; min-width:0;
-    }
-    .bottom-nav .side-item svg{ width:19px; height:19px; }
-    .bottom-nav .side-item.active::before{ display:none; }
-    .bottom-nav .side-item span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:64px; }
-
-    /* Floating "new app" button, thumb-reachable */
-    .fab-new{
-      display:flex; align-items:center; justify-content:center;
-      position:fixed; right:16px; bottom:calc(74px + env(safe-area-inset-bottom));
-      z-index:59; width:52px; height:52px; border-radius:50%;
-      background:linear-gradient(155deg, var(--red-2), #c23a22); color:#fff; border:none;
-      box-shadow:0 12px 26px -8px var(--red-glow), 0 4px 10px rgba(0,0,0,.4);
-    }
-    .fab-new:active{ transform:scale(.94); }
-
-    /* Trim the topbar: hide the redundant "new app" text button + kbd hint, keep icons */
-    #newAppBtn{ display:none; }
     .kbd-hint{ display:none; }
   }
 
@@ -837,7 +827,7 @@
     .brand{ padding-right:12px; margin-right:0; }
     .brand-sub{ max-width:140px; }
     .topbar-search{ order:3; max-width:none; width:100%; margin-top:2px; }
-    .page{ padding:18px 14px 96px; }
+    .page{ padding:18px 14px 36px; }
     .page-title{ font-size:21px; }
     .detail-actions{ margin-left:0; width:100%; }
     .detail-actions .btn{ flex:1; }
@@ -879,7 +869,7 @@
     .cmdk-box{ max-width:100%; }
 
     /* Toasts span the width instead of hugging a corner */
-    .toast-wrap{ left:12px; right:12px; bottom:calc(84px + env(safe-area-inset-bottom)); }
+    .toast-wrap{ left:12px; right:12px; bottom:calc(16px + env(safe-area-inset-bottom)); }
     .toast{ max-width:none; }
   }
 
@@ -918,6 +908,9 @@
 <div class="boot-caption" id="bootCaption" style="display:none;"></div>
 
 <div class="topbar">
+  <button class="btn btn-icon btn-ghost mobile-menu-btn" id="mobileMenuBtn" title="Menü" aria-label="Menü">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
   <div class="brand">
     <div class="brand-mark">
       <svg viewBox="0 0 24 24" fill="none"><path d="M4 12L10 18L20 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -936,7 +929,7 @@
     <button class="btn btn-icon btn-ghost" id="cmdkBtn" title="Hızlı ara (Ctrl+K)">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9l2.5 2.5L8 14"/><line x1="13" y1="14" x2="16" y2="14"/></svg>
     </button>
-    <button class="btn btn-icon btn-ghost" id="settingsBtn" title="Ayarlar">
+    <button class="btn btn-icon btn-ghost admin-only" id="settingsBtn" title="Ayarlar" style="display:none;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 4.29l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.4a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9c0 .67.39 1.27 1 1.51h.6a2 2 0 010 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
     </button>
     <button class="btn btn-icon btn-ghost" id="logoutBtn" title="Hesaptan çıkış yap">
@@ -971,7 +964,7 @@
       Aktivite
     </button>
     <div class="side-sep"></div>
-    <button class="side-item" data-view="settings">
+    <button class="side-item admin-only" data-view="settings" style="display:none;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 4.29l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.4a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9c0 .67.39 1.27 1 1.51h.6a2 2 0 010 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
       Ayarlar
     </button>
@@ -1005,34 +998,61 @@
   </main>
 </div>
 
-<!-- Bottom tab bar (mobile only) -->
-<nav class="bottom-nav" id="bottomNav">
-  <button class="side-item" data-view="dashboard">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-    <span>Dashboard</span>
-  </button>
-  <button class="side-item" data-view="home">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-    <span>Uygulamalar</span>
-  </button>
-  <button class="side-item" data-view="releases">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
-    <span>Sürümler</span>
-  </button>
-  <button class="side-item" data-view="activity">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    <span>Aktivite</span>
-  </button>
-  <button class="side-item" data-view="settings">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 4.29l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.4a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9c0 .67.39 1.27 1 1.51h.6a2 2 0 010 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
-    <span>Ayarlar</span>
-  </button>
-</nav>
-
-<!-- Floating "new app" button (mobile only) -->
-<button class="fab-new" id="fabNewApp" title="Yeni Uygulama" aria-label="Yeni Uygulama">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-</button>
+<!-- Mobile drawer (left slide-out menu, replaces bottom nav) -->
+<div class="mobile-drawer-scrim" id="mobileDrawerScrim"></div>
+<aside class="mobile-drawer" id="mobileDrawer">
+  <div class="mobile-drawer-head">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 12L10 18L20 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">VonHub Console</div>
+      <div class="brand-sub" id="drawerUserLine">&nbsp;</div>
+    </div>
+    <button class="close-x" id="mobileDrawerClose">&times;</button>
+  </div>
+  <div class="mobile-drawer-nav">
+    <div class="side-label">Genel Bakış</div>
+    <button class="side-item" data-view="dashboard">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </button>
+    <button class="side-item" data-view="home">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Uygulamalarım
+    </button>
+    <div class="side-label">Kayıtlar</div>
+    <button class="side-item" data-view="releases">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+      Sürümler
+    </button>
+    <button class="side-item" data-view="activity">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Aktivite
+    </button>
+    <div class="side-sep"></div>
+    <div class="side-label">İşlemler</div>
+    <button class="side-item" id="drawerNewAppBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Yeni Uygulama
+    </button>
+    <button class="side-item" id="drawerSearchBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Hızlı Ara
+    </button>
+    <button class="side-item admin-only" data-view="settings" style="display:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 4.29l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.4a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9c0 .67.39 1.27 1 1.51h.6a2 2 0 010 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
+      Ayarlar
+    </button>
+    <button class="side-item" id="drawerLogoutBtn" style="color:#ff8a7a;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Hesaptan çıkış yap
+    </button>
+  </div>
+  <div class="sidebar-foot">
+    <div class="status-line"><span class="status-dot"></span>GitHub Pages üzerinden yayınlanıyor</div>
+  </div>
+</aside>
 
 <!-- Command Palette -->
 <div class="cmdk-overlay" id="cmdkOverlay">
@@ -1360,10 +1380,11 @@ const LS_ACCOUNTS = 'vonlab_console_accounts';
 const LS_APP_CREDS = 'vonlab_console_app_creds';
 
 let settings = JSON.parse(localStorage.getItem(LS_SETTINGS) || 'null') || {
-  username:'', token:'', mode:'single', hubRepo:'vonhub-console-data', autoScan:true, cryptoKey:''
+  username:'', token:'', mode:'single', hubRepo:'vonhub-console-data', autoScan:true, cryptoKey:'', isAdmin:false
 };
 if(typeof settings.autoScan !== 'boolean') settings.autoScan = true;
 if(typeof settings.cryptoKey !== 'string') settings.cryptoKey = '';
+if(typeof settings.isAdmin !== 'boolean') settings.isAdmin = false;
 let apps = JSON.parse(localStorage.getItem(LS_MANIFEST_CACHE) || '[]');
 
 /* ---- accounts & sql (local-only, never pushed to GitHub manifest) ---- */
@@ -2339,7 +2360,7 @@ document.getElementById('newAppBtn').addEventListener('click', ()=>{
   populateDatalists();
   openOverlay('newAppOverlay');
 });
-document.getElementById('bannerSettingsBtn').addEventListener('click', ()=> openOverlay('settingsOverlay'));
+document.getElementById('bannerSettingsBtn').addEventListener('click', openSettings);
 
 function populateDatalists(){
   const cats = [...new Set(apps.map(a=>a.category).filter(Boolean))];
@@ -2536,6 +2557,12 @@ function atobToBinaryStr(b64){
 }
 
 /* ============================= SETTINGS ============================= */
+/* Ayarlar sadece admin olarak işaretli hesaplar için açılabilir. */
+function openSettings(){
+  if(!settings.isAdmin){ toast('Ayarlara sadece yönetici hesapları erişebilir.', 'err'); return; }
+  loadSettingsIntoForm();
+  openOverlay('settingsOverlay');
+}
 function loadSettingsIntoForm(){
   document.getElementById('st_username').value = settings.username;
   const stTokenInp = document.getElementById('st_token');
@@ -2551,7 +2578,7 @@ function loadSettingsIntoForm(){
   renderAccountSettingsList();
   openSettingsTab('github');
 }
-document.getElementById('settingsBtn').addEventListener('click', ()=>{ loadSettingsIntoForm(); openOverlay('settingsOverlay'); });
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
 document.querySelectorAll('.settings-nav-btn').forEach(b => b.addEventListener('click', ()=>{
   const tab = b.dataset.settingsTab;
   document.querySelectorAll('.settings-nav-btn').forEach(x => x.classList.toggle('active', x===b));
@@ -2766,7 +2793,7 @@ window.addEventListener('popstate', (e)=>{
 });
 document.querySelectorAll('.side-item[data-view]').forEach(b=>{
   b.addEventListener('click', ()=>{
-    if(b.dataset.view === 'settings'){ loadSettingsIntoForm(); openOverlay('settingsOverlay'); return; }
+    if(b.dataset.view === 'settings'){ openSettings(); return; }
     showView(b.dataset.view);
   });
 });
@@ -3573,14 +3600,14 @@ function cmdkBuildItems(query){
     items.push({type:'nav', label:'Sürümler', view:'releases'});
     items.push({type:'nav', label:'Aktivite', view:'activity'});
     items.push({type:'action', label:'Yeni Uygulama', action:'newapp'});
-    items.push({type:'action', label:'Ayarlar', action:'settings'});
+    if(settings.isAdmin) items.push({type:'action', label:'Ayarlar', action:'settings'});
   } else {
     apps.filter(a=>a.name.toLowerCase().includes(q)).slice(0,8).forEach(a => items.push({type:'app', app:a}));
     if('yeni uygulama'.includes(q) || 'new'.includes(q)) items.push({type:'action', label:'Yeni Uygulama', action:'newapp'});
     if('dashboard'.includes(q)) items.push({type:'nav', label:'Dashboard', view:'dashboard'});
     if('sürümler'.includes(q) || 'surum'.includes(q)) items.push({type:'nav', label:'Sürümler', view:'releases'});
     if('aktivite'.includes(q)) items.push({type:'nav', label:'Aktivite', view:'activity'});
-    if('ayarlar'.includes(q)) items.push({type:'action', label:'Ayarlar', action:'settings'});
+    if(settings.isAdmin && 'ayarlar'.includes(q)) items.push({type:'action', label:'Ayarlar', action:'settings'});
   }
   return items;
 }
@@ -3613,7 +3640,7 @@ function cmdkSelect(it){
   if(it.type==='app') openDetail(it.app.id);
   else if(it.type==='nav') showView(it.view);
   else if(it.action==='newapp') document.getElementById('newAppBtn').click();
-  else if(it.action==='settings'){ loadSettingsIntoForm(); openOverlay('settingsOverlay'); }
+  else if(it.action==='settings'){ openSettings(); }
 }
 function openCmdk(){
   document.getElementById('cmdkInput').value = '';
@@ -3809,8 +3836,10 @@ document.getElementById('auth_submit').addEventListener('click', async ()=>{
     settings.hubRepo = data.hubRepo || ACCOUNT_REPO;
     settings.cryptoKey = (data.sync && data.sync.cryptoKey) || '';
     settings.mode = data.mode || 'multi'; // repo başına: yeni uygulamalar kendi ayrı reposunda oluşturulsun
+    settings.isAdmin = !!(user.admin || user.isAdmin || user.role === 'admin');
     settings.autoScan = true;
     localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+    applyAdminUI();
     hideAuthGate();
     await runFirstTimeSetup();
     toast('Hoş geldin, ' + username + '.');
@@ -3827,6 +3856,48 @@ document.getElementById('auth_username').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') document.getElementById('auth_password').focus();
 });
 
+/* Ayarlar girişini (dişli ikonu + "Ayarlar" menü öğeleri) yalnızca admin
+   olarak işaretlenmiş hesaplar için gösterir. Diğer kullanıcılar için gizli kalır. */
+function applyAdminUI(){
+  const show = !!settings.isAdmin;
+  const settingsBtn = document.getElementById('settingsBtn');
+  if(settingsBtn) settingsBtn.style.display = show ? 'inline-flex' : 'none';
+  document.querySelectorAll('.admin-only[data-view="settings"]').forEach(el=>{
+    el.style.display = show ? 'flex' : 'none';
+  });
+}
+
+/* ---- Mobile drawer (hamburger menu): tüm gezinme ve işlem butonları burada ---- */
+function openMobileDrawer(){
+  document.getElementById('mobileDrawer').classList.add('open');
+  document.getElementById('mobileDrawerScrim').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const line = document.getElementById('drawerUserLine');
+  if(line) line.textContent = settings.username ? ('@' + settings.username) : '';
+}
+function closeMobileDrawer(){
+  document.getElementById('mobileDrawer').classList.remove('open');
+  document.getElementById('mobileDrawerScrim').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('mobileMenuBtn').addEventListener('click', openMobileDrawer);
+document.getElementById('mobileDrawerClose').addEventListener('click', closeMobileDrawer);
+document.getElementById('mobileDrawerScrim').addEventListener('click', closeMobileDrawer);
+document.querySelectorAll('#mobileDrawer .side-item').forEach(b => b.addEventListener('click', closeMobileDrawer));
+window.addEventListener('resize', ()=>{ if(window.innerWidth > 900) closeMobileDrawer(); });
+document.getElementById('drawerNewAppBtn').addEventListener('click', ()=>{
+  closeMobileDrawer();
+  document.getElementById('newAppBtn').click();
+});
+document.getElementById('drawerSearchBtn').addEventListener('click', ()=>{
+  closeMobileDrawer();
+  openCmdk();
+});
+document.getElementById('drawerLogoutBtn').addEventListener('click', ()=>{
+  closeMobileDrawer();
+  logout();
+});
+
 /* Hesaptan çıkış: yerel oturum verilerini temizler ve giriş ekranına döner.
    GitHub'daki hiçbir veriyi silmez, sadece bu tarayıcıdaki oturumu sonlandırır. */
 function logout(){
@@ -3840,14 +3911,12 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 if(!(settings.token && settings.username)){
   showAuthGate();
 }else{
+  applyAdminUI();
   refreshFromGithub();
   if(settings.token && settings.username && settings.hubRepo && settings.cryptoKey) initCredsSync();
   autoScanAndUseRepo();
 }
 
-/* Mobile FAB → aynı "Yeni Uygulama" akışını tetikler */
-const fabNewApp = document.getElementById('fabNewApp');
-if(fabNewApp) fabNewApp.addEventListener('click', ()=> document.getElementById('newAppBtn').click());
 </script>
 </body>
 </html>
