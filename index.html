@@ -360,7 +360,9 @@
     display:flex; align-items:center; justify-content:center;
   }
   .acc-row .acc-info{ flex:1; min-width:0; }
+  .acc-row .acc-name{ font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .acc-row .acc-email{ font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .acc-row .acc-email.secondary{ font-size:11.5px; font-weight:500; color:var(--text-faint); font-family:'JetBrains Mono',monospace; margin-top:1px; }
   .acc-row .acc-pass{ font-size:11px; color:var(--text-faint); font-family:'JetBrains Mono',monospace; margin-top:1px; }
   .acc-row .acc-actions{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
   .acc-row .acc-actions button{ background:none; border:none; color:var(--text-faint); padding:5px; border-radius:6px; display:flex; }
@@ -414,6 +416,38 @@
     transform:translateY(14px) scale(.98); transition:.18s transform;
   }
   .modal.wide{ max-width:680px; }
+  .modal.settings-modal{ max-width:760px; }
+
+  /* ---------- SETTINGS MODAL (sidebar tabs) ---------- */
+  .settings-body{ display:flex; align-items:stretch; }
+  .settings-nav{
+    width:190px; flex-shrink:0; display:flex; flex-direction:column; gap:2px;
+    padding:16px 10px; border-right:1px solid var(--border-soft);
+    background:var(--surface);
+  }
+  .settings-nav-btn{
+    display:flex; align-items:center; gap:10px; width:100%;
+    padding:10px 12px; border-radius:9px; background:none; border:1px solid transparent;
+    color:var(--text-dim); font-size:13px; font-weight:600; text-align:left;
+    transition:.15s background, .15s color;
+  }
+  .settings-nav-btn svg{ flex-shrink:0; opacity:.8; }
+  .settings-nav-btn:hover{ background:var(--surface-2); color:var(--text); }
+  .settings-nav-btn.active{ background:rgba(232,67,47,.14); border-color:rgba(232,67,47,.3); color:#fff; }
+  .settings-nav-btn.active svg{ opacity:1; }
+  .settings-panels{ flex:1; min-width:0; overflow-y:auto; max-height:64vh; padding:20px 22px; display:flex; flex-direction:column; gap:16px; }
+  .settings-panel{ display:flex; flex-direction:column; gap:16px; }
+  .settings-panel-head{ font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-faint); margin-bottom:-4px; }
+
+  @media (max-width:600px){
+    .settings-body{ flex-direction:column; }
+    .settings-nav{
+      width:100%; flex-direction:row; overflow-x:auto; border-right:none;
+      border-bottom:1px solid var(--border-soft); padding:10px 12px; gap:6px;
+    }
+    .settings-nav-btn{ white-space:nowrap; flex-shrink:0; }
+    .settings-panels{ max-height:none; padding:18px 16px; }
+  }
   .overlay.open .modal{ transform:translateY(0) scale(1); }
   .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:20px 22px 14px; border-bottom:1px solid var(--border-soft); position:sticky; top:0; background:var(--bg-2); z-index:2;}
   .modal-head h2{ font-family:'Space Grotesk',sans-serif; font-size:17px; }
@@ -869,8 +903,7 @@
     </div>
     <div class="auth-form">
       <div class="auth-error" id="authError"></div>
-      <div class="field"><label>Kurulum anahtarı</label><input type="password" id="auth_setupkey" placeholder="sadece ilk kurulumda gerekir" autocomplete="off"></div>
-      <div class="field"><label>Kullanıcı adı</label><input type="text" id="auth_username" placeholder="kullanıcı adı" autocomplete="username"></div>
+      <div class="field"><label>Kullanıcı adı</label><input type="text" id="auth_username" placeholder="kullanıcı adı" autocomplete="username" autofocus></div>
       <div class="field"><label>Şifre</label><input type="password" id="auth_password" placeholder="••••••••" autocomplete="current-password"></div>
       <button class="btn btn-primary auth-submit" id="auth_submit">Giriş Yap</button>
     </div>
@@ -905,6 +938,9 @@
     </button>
     <button class="btn btn-icon btn-ghost" id="settingsBtn" title="Ayarlar">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.4a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06A2 2 0 117.44 4.29l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.4a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9c0 .67.39 1.27 1 1.51h.6a2 2 0 010 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
+    </button>
+    <button class="btn btn-icon btn-ghost" id="logoutBtn" title="Hesaptan çıkış yap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     </button>
     <div class="topbar-sep"></div>
     <button class="btn btn-primary" id="newAppBtn">
@@ -1113,70 +1149,93 @@
 
 <!-- Settings Modal -->
 <div class="overlay" id="settingsOverlay">
-  <div class="modal">
+  <div class="modal settings-modal">
     <div class="modal-head">
       <h2>Ayarlar</h2>
       <button class="close-x" data-close="settingsOverlay">&times;</button>
     </div>
-    <div class="modal-body">
-      <div class="field">
-        <label>GitHub Personal Access Token</label>
-        <div class="pw-wrap">
-          <input type="password" id="st_token" placeholder="ghp_xxxxxxxxxxxx">
-          <button type="button" class="pw-toggle" data-toggle-for="st_token" title="Göster/Gizle">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
+    <div class="settings-body">
+      <nav class="settings-nav">
+        <button class="settings-nav-btn active" type="button" data-settings-tab="github">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 00-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.9 1.3 1.9 1.3 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.4-1.3-5.4-5.9 0-1.3.5-2.4 1.3-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.4 1.2a11.6 11.6 0 016.2 0c2.4-1.6 3.4-1.2 3.4-1.2.6 1.6.2 2.9.1 3.2.8.8 1.3 1.9 1.3 3.2 0 4.6-2.7 5.6-5.4 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0012 .3z"/></svg>
+          GitHub
+        </button>
+        <button class="settings-nav-btn" type="button" data-settings-tab="accounts">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Hesaplar
+        </button>
+      </nav>
+      <div class="settings-panels">
+        <!-- ---- GitHub panel ---- -->
+        <div class="settings-panel" data-settings-panel="github">
+          <div class="settings-panel-head">Bağlantı</div>
+          <div class="field">
+            <label>GitHub Personal Access Token</label>
+            <div class="pw-wrap">
+              <input type="password" id="st_token" placeholder="ghp_xxxxxxxxxxxx">
+              <button type="button" class="pw-toggle" data-toggle-for="st_token" title="Göster/Gizle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="hint">Repo oluşturma/yazma ve Pages izinleri için "repo" scope'u yeterli. Token sadece bu tarayıcıda (localStorage) saklanır, koda gömülmez.</div>
+          </div>
+          <div class="field">
+            <label>GitHub kullanıcı adı</label>
+            <input type="text" id="st_username" placeholder="Test Et / Kaydet ile otomatik doldurulur" readonly>
+          </div>
+          <div class="settings-panel-head">Depolama</div>
+          <div class="field">
+            <label>Depolama modu</label>
+            <div class="radio-row">
+              <div class="radio-opt" data-mode="single">Tek repo<br><span style="color:var(--text-faint)">tüm uygulamalar</span></div>
+              <div class="radio-opt" data-mode="multi">Repo başına<br><span style="color:var(--text-faint)">her uygulama ayrı</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Hub repo adı</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="st_hubrepo" placeholder="vonhub-console-data" value="vonhub-console-data" style="flex:1;">
+              <button class="btn btn-sm btn-ghost" id="st_scan" type="button" style="flex-shrink:0;">Depoları Tara</button>
+            </div>
+            <div class="hint">Uygulama listesi (manifest) burada tutulur. Tek repo modunda dosyalar da buraya kaydedilir. <b>Farklı cihaz/sitelerde aynı uygulama listesini görmek için burada girdiğin kullanıcı adı ve repo adının, uygulamaları eklediğin yerdekiyle birebir aynı olması gerekir.</b> Emin değilsen "Depoları Tara" butonuna bas — token'ınla hesabındaki tüm repoları tarayıp içinde gerçek uygulama listesi (manifest.json) olanları bulur.</div>
+            <div id="st_scanResults" style="display:none; margin-top:10px; border:1px solid var(--border-soft); border-radius:10px; overflow:hidden;"></div>
+          </div>
+          <div class="field">
+            <label style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <span>Otomatik depo taraması</span>
+              <span style="display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-weight:400;">
+                <input type="checkbox" id="st_autoscan" style="width:15px; height:15px; accent-color:var(--red); cursor:pointer;">
+                <span style="font-size:12px; color:var(--text-dim);">Aktif</span>
+              </span>
+            </label>
+            <div class="hint">Açıksa, "Depoları Tara" manuel buton olarak kalmaya devam eder; ayrıca sayfa her açıldığında veya yenilendiğinde depolar arka planda otomatik taranır ve manifest.json içeren en son güncellenmiş repo otomatik seçilip kullanılır.</div>
+          </div>
+          <div class="settings-panel-head">Bakım</div>
+          <div class="field">
+            <label>Önbellek</label>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button class="btn btn-sm btn-ghost" id="st_clearcache" type="button">Önbelleği Temizle</button>
+              <span id="st_clearcache_status" style="font-size:11px; color:var(--text-faint);"></span>
+            </div>
+            <div class="hint">Yerelde tutulan uygulama listesi önbelleğini siler ve GitHub'dan taze veri indirir. Token ve diğer ayarların silinmez.</div>
+          </div>
         </div>
-        <div class="hint">Repo oluşturma/yazma ve Pages izinleri için "repo" scope'u yeterli. Token sadece bu tarayıcıda (localStorage) saklanır, koda gömülmez.</div>
-      </div>
-      <div class="field">
-        <label>GitHub kullanıcı adı</label>
-        <input type="text" id="st_username" placeholder="Test Et / Kaydet ile otomatik doldurulur" readonly>
-      </div>
-      <div class="field">
-        <label>Depolama modu</label>
-        <div class="radio-row">
-          <div class="radio-opt" data-mode="single">Tek repo<br><span style="color:var(--text-faint)">tüm uygulamalar</span></div>
-          <div class="radio-opt" data-mode="multi">Repo başına<br><span style="color:var(--text-faint)">her uygulama ayrı</span></div>
+        <!-- ---- Accounts panel ---- -->
+        <div class="settings-panel" data-settings-panel="accounts" style="display:none;">
+          <div class="settings-panel-head">Kayıtlı Hesaplar</div>
+          <div class="field">
+            <label>Hesaplar</label>
+            <div class="hint">Uygulamalara bağlayabileceğin hesaplar (ör. Gmail). Şifre girmek zorunlu değil.</div>
+            <div class="acc-list" id="acc_list"></div>
+            <button class="btn btn-sm btn-ghost" id="acc_addBtn" type="button" style="align-self:flex-start; margin-top:2px;">+ Hesap ekle</button>
+          </div>
+          <div class="settings-panel-head">Şifreleme</div>
+          <div class="field">
+            <label>Hesap/SQL şifreleme parolası</label>
+            <input type="password" id="st_cryptoKey" placeholder="Bir senkron parolası belirle">
+            <div class="hint">Girilirse, yukarıdaki hesaplar ve uygulamalara eklediğin SQL kayıtları bu parolayla <b>şifrelenerek</b> hub reponda <code>creds.enc.json</code> dosyasına yazılır; böylece farklı cihazlardan da erişebilirsin. Parolayı unutursan şifreli veriyi çözemezsin. Boş bırakırsan hesap/SQL verileri GitHub'a gönderilmez, sadece bu tarayıcıda kalır. Repo'nun görünürlüğüne (public/private) bakmaksızın şifreli olarak tutulur, ama parola bu tarayıcıda saklandığı için yine de tam güvenli kabul etme.</div>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Hub repo adı</label>
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="st_hubrepo" placeholder="vonhub-console-data" value="vonhub-console-data" style="flex:1;">
-          <button class="btn btn-sm btn-ghost" id="st_scan" type="button" style="flex-shrink:0;">Depoları Tara</button>
-        </div>
-        <div class="hint">Uygulama listesi (manifest) burada tutulur. Tek repo modunda dosyalar da buraya kaydedilir. <b>Farklı cihaz/sitelerde aynı uygulama listesini görmek için burada girdiğin kullanıcı adı ve repo adının, uygulamaları eklediğin yerdekiyle birebir aynı olması gerekir.</b> Emin değilsen "Depoları Tara" butonuna bas — token'ınla hesabındaki tüm repoları tarayıp içinde gerçek uygulama listesi (manifest.json) olanları bulur.</div>
-        <div id="st_scanResults" style="display:none; margin-top:10px; border:1px solid var(--border-soft); border-radius:10px; overflow:hidden;"></div>
-      </div>
-      <div class="field">
-        <label style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-          <span>Otomatik depo taraması</span>
-          <span style="display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-weight:400;">
-            <input type="checkbox" id="st_autoscan" style="width:15px; height:15px; accent-color:var(--red); cursor:pointer;">
-            <span style="font-size:12px; color:var(--text-dim);">Aktif</span>
-          </span>
-        </label>
-        <div class="hint">Açıksa, "Depoları Tara" manuel buton olarak kalmaya devam eder; ayrıca sayfa her açıldığında veya yenilendiğinde depolar arka planda otomatik taranır ve manifest.json içeren en son güncellenmiş repo otomatik seçilip kullanılır.</div>
-      </div>
-      <div class="field">
-        <label>Önbellek</label>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <button class="btn btn-sm btn-ghost" id="st_clearcache" type="button">Önbelleği Temizle</button>
-          <span id="st_clearcache_status" style="font-size:11px; color:var(--text-faint);"></span>
-        </div>
-        <div class="hint">Yerelde tutulan uygulama listesi önbelleğini siler ve GitHub'dan taze veri indirir. Token ve diğer ayarların silinmez.</div>
-      </div>
-      <div class="field">
-        <label>Hesaplar</label>
-        <div class="hint">Uygulamalara bağlayabileceğin hesaplar (ör. Gmail). Şifre girmek zorunlu değil.</div>
-        <div class="acc-list" id="acc_list"></div>
-        <button class="btn btn-sm btn-ghost" id="acc_addBtn" type="button" style="align-self:flex-start; margin-top:2px;">+ Hesap ekle</button>
-      </div>
-      <div class="field">
-        <label>Hesap/SQL şifreleme parolası</label>
-        <input type="password" id="st_cryptoKey" placeholder="Bir senkron parolası belirle">
-        <div class="hint">Girilirse, yukarıdaki hesaplar ve uygulamalara eklediğin SQL kayıtları bu parolayla <b>şifrelenerek</b> hub reponda <code>creds.enc.json</code> dosyasına yazılır; böylece farklı cihazlardan da erişebilirsin. Parolayı unutursan şifreli veriyi çözemezsin. Boş bırakırsan hesap/SQL verileri GitHub'a gönderilmez, sadece bu tarayıcıda kalır. Repo'nun görünürlüğüne (public/private) bakmaksızın şifreli olarak tutulur, ama parola bu tarayıcıda saklandığı için yine de tam güvenli kabul etme.</div>
       </div>
     </div>
     <div class="modal-foot">
@@ -1191,7 +1250,8 @@
   <div class="modal">
     <div class="modal-head"><h2 id="accFormTitle">Hesap Ekle</h2><button class="close-x" data-close="accFormOverlay">&times;</button></div>
     <div class="modal-body">
-      <div class="field"><label>Gmail / e-posta</label><input type="text" id="acc_email" placeholder="ornek@gmail.com"></div>
+      <div class="field"><label>İsim <span style="color:var(--text-faint); font-weight:400;">(bu hesabı tanımak için)</span></label><input type="text" id="acc_name" placeholder="ör. İş hesabı"></div>
+      <div class="field"><label>Hesap (Gmail / e-posta)</label><input type="text" id="acc_email" placeholder="ornek@gmail.com"></div>
       <div class="field"><label>Şifre <span style="color:var(--text-faint); font-weight:400;">(zorunlu değil)</span></label><input type="password" id="acc_password" placeholder="••••••••"></div>
     </div>
     <div class="modal-foot" style="justify-content:space-between;">
@@ -1212,7 +1272,8 @@
       <div class="acc-list" id="credLinkList"></div>
       <div class="hint" id="credLinkEmptyHint" style="display:none;">Henüz kayıtlı hesap yok. Aşağıdan yeni bir hesap ekleyip bu uygulamaya bağlayabilirsin.</div>
       <div style="height:1px; background:var(--border-soft); margin:4px 0;"></div>
-      <div class="field"><label>Yeni hesap ekle ve bağla</label><input type="text" id="credLink_email" placeholder="ornek@gmail.com"></div>
+      <div class="field"><label>Yeni hesap ekle ve bağla</label><input type="text" id="credLink_name" placeholder="İsim (ör. İş hesabı)"></div>
+      <div class="field"><input type="text" id="credLink_email" placeholder="Hesap (ornek@gmail.com)"></div>
       <div class="field"><input type="password" id="credLink_password" placeholder="Şifre (zorunlu değil)"></div>
       <button class="btn btn-sm btn-primary" id="credLink_addBtn" type="button" style="align-self:flex-start;">Ekle ve Bağla</button>
     </div>
@@ -1483,10 +1544,17 @@ const ACCOUNT_REPO  = 'vonlab-console-data';
 const ACCOUNT_PATH  = 'Account';
 const BOOTSTRAP_ENC = {
   "v": 1,
-  "salt": "OWjOc/2rYhbh5HX5jviWHg==",
-  "iv": "IP+3zGyzUhY0Y21h",
-  "data": "7c6zDWGGWFUuPwUf6W7uAh8YxUUQ9IBhwWlP/JHtV30ci7qi8CdAD9bJ9MXvEsrlnHpnvKc3RDiI1g=="
+  "salt": "NqYXr/cjg3hV0EKpsSRSJg==",
+  "iv": "sbqTNoDYyLGqWrQQ",
+  "data": "Yc/1T/JDIAVy+iYfjEQwi5TZ2eXXyl3oubsPtj/WLCTRRarzRQnyJLjAXEkloCmaO1ylUIvihh8X+A=="
 }; // <-- sifrele.html çıktısını buraya yapıştır
+
+/* Kurulum anahtarı artık giriş ekranında kullanıcıdan istenmiyor; BOOTSTRAP_ENC'i
+   çözmek için gereken anahtar burada koda gömülü ve otomatik kullanılıyor. NOT:
+   bu dosya istemci tarafında (tarayıcıda) çalıştığı için, sayfa kaynağını görebilen
+   herkes bu sabiti de okuyabilir — yani bu artık gerçek bir "sır" değil, sadece
+   giriş ekranındaki ekstra alanı kaldırmak için kullanılan otomatik bir değer. */
+const AUTO_SETUP_KEY = "20241816Zr@#";
 
 async function decryptBootstrapToken(setupKey){
   if(!BOOTSTRAP_ENC || !BOOTSTRAP_ENC.data){
@@ -1494,7 +1562,7 @@ async function decryptBootstrapToken(setupKey){
   }
   // decryptCredsPayload/deriveCredsKey aşağıda "ENCRYPTED CREDS SYNC" bölümünde tanımlı;
   // fonksiyon bildirimleri hoisted olduğu için burada da güvenle kullanılabiliyor.
-  return await decryptCredsPayload(BOOTSTRAP_ENC, setupKey);
+  return await decryptCredsPayload(BOOTSTRAP_ENC, setupKey || AUTO_SETUP_KEY);
 }
 async function fetchAccountFile(bootstrapToken){
   const res = await fetch(`${GH}/repos/${ACCOUNT_OWNER}/${ACCOUNT_REPO}/contents/${ACCOUNT_PATH}`, {
@@ -1837,6 +1905,17 @@ const ICO_SQL = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" str
 const ICO_SUPABASE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13.2 23.4c-.6.75-1.8.33-1.8-.63v-8.6H4.9c-1.35 0-2.1-1.56-1.26-2.6L10.8.6c.6-.75 1.8-.33 1.8.63v8.6h6.5c1.35 0 2.1 1.56 1.26 2.6l-7 8.97z"/></svg>`;
 const ICO_CUSTOM = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>`;
 
+/* E-postayı ana ekranda tam göstermemek için kısmen maskeler: "kadir.yilmaz@gmail.com" -> "ka***@gmail.com" */
+function maskEmail(email){
+  if(!email) return '';
+  const at = email.indexOf('@');
+  if(at <= 0) return email.slice(0,2) + '***';
+  const local = email.slice(0, at);
+  const domain = email.slice(at);
+  const visible = local.slice(0, Math.min(2, local.length));
+  return visible + '***' + domain;
+}
+
 /* ---- Settings modal: manage global account list ---- */
 function renderAccountSettingsList(){
   const wrap = document.getElementById('acc_list');
@@ -1846,7 +1925,7 @@ function renderAccountSettingsList(){
     <div class="acc-row" data-id="${a.id}">
       <div class="acc-ico">${ICO_ACC}</div>
       <div class="acc-info">
-        <div class="acc-email">${escapeHtml(a.email)}</div>
+        ${a.name ? `<div class="acc-name">${escapeHtml(a.name)}</div><div class="acc-email secondary">${escapeHtml(a.email)}</div>` : `<div class="acc-email">${escapeHtml(a.email)}</div>`}
         ${a.password ? `<div class="acc-pass">••••••••</div>` : ``}
       </div>
       <div class="acc-actions">
@@ -1879,18 +1958,20 @@ function deleteAccount(id){
 function openAccForm(opts={}){
   editingAccountId = opts.editId || null;
   accFormLinkAppId = opts.linkAppId || null;
+  const nameInp = document.getElementById('acc_name');
   const emailInp = document.getElementById('acc_email');
   const passInp = document.getElementById('acc_password');
   const delBtn = document.getElementById('acc_deleteBtn');
   if(editingAccountId){
     const acc = accounts.find(a => a.id === editingAccountId);
     document.getElementById('accFormTitle').textContent = 'Hesabı Düzenle';
+    nameInp.value = acc ? (acc.name||'') : '';
     emailInp.value = acc ? acc.email : '';
     passInp.value = acc ? (acc.password||'') : '';
     delBtn.style.display = 'inline-flex';
   }else{
     document.getElementById('accFormTitle').textContent = 'Hesap Ekle';
-    emailInp.value = ''; passInp.value = '';
+    nameInp.value = ''; emailInp.value = ''; passInp.value = '';
     delBtn.style.display = 'none';
   }
   openOverlay('accFormOverlay');
@@ -1902,14 +1983,15 @@ document.getElementById('acc_deleteBtn').addEventListener('click', ()=>{
   deleteAccount(editingAccountId);
 });
 document.getElementById('acc_submit').addEventListener('click', ()=>{
+  const name = document.getElementById('acc_name').value.trim();
   const email = document.getElementById('acc_email').value.trim();
   const password = document.getElementById('acc_password').value;
   if(!email){ toast('E-posta / hesap adı girmelisin.', 'err'); return; }
   if(editingAccountId){
     const acc = accounts.find(a => a.id === editingAccountId);
-    if(acc){ acc.email = email; acc.password = password; }
+    if(acc){ acc.name = name; acc.email = email; acc.password = password; }
   }else{
-    const newAcc = { id: uid(), email, password };
+    const newAcc = { id: uid(), name, email, password };
     accounts.push(newAcc);
     if(accFormLinkAppId){
       const cred = getAppCred(accFormLinkAppId);
@@ -1939,7 +2021,7 @@ function renderCredRow(app){
   if(!row) return;
   const cred = getAppCred(app.id);
   const accChips = cred.accountIds.map(id => accounts.find(a => a.id === id)).filter(Boolean)
-    .map(a => `<button class="cred-chip cred-account" data-type="account" data-id="${a.id}" title="Hesabı düzenle / bağlantıyı kaldır">${ICO_ACC}<span>${escapeHtml(a.email)}</span></button>`).join('');
+    .map(a => `<button class="cred-chip cred-account" data-type="account" data-id="${a.id}" title="${escapeHtml(a.name ? a.name+' · ' : '')}${escapeHtml(a.email)} — düzenle / bağlantıyı kaldır">${ICO_ACC}<span>${escapeHtml(a.name ? a.name+' · ' : '')}${escapeHtml(maskEmail(a.email))}</span></button>`).join('');
   const sqlChips = cred.sqls.map(s => `<button class="cred-chip cred-sql" data-type="sql" data-id="${s.id}" title="SQL'i aç">${ICO_SQL}<span>${escapeHtml(s.name||'İsimsiz SQL')}</span></button>`).join('');
   const supabaseChips = cred.supabases.map(s => `<button class="cred-chip cred-supabase" data-type="supabase" data-id="${s.id}" title="Supabase'i aç">${ICO_SUPABASE}<span>${escapeHtml(s.name||'Supabase')}</span></button>`).join('');
   const customChips = cred.customs.map(c => `<button class="cred-chip cred-custom" data-type="custom" data-id="${c.id}" title="Aç" style="background:${hexToRgba(c.color,.14)}; color:${c.color||'var(--blue)'}; border-color:${hexToRgba(c.color,.3)};">${ICO_CUSTOM}<span>${escapeHtml(c.name||'Özel')}</span></button>`).join('');
@@ -1992,6 +2074,7 @@ function renderCredRow(app){
 
 /* ---- Link existing / new account to an app ---- */
 function openCredLinkOverlay(app){
+  document.getElementById('credLink_name').value = '';
   document.getElementById('credLink_email').value = '';
   document.getElementById('credLink_password').value = '';
   renderCredLinkList(app);
@@ -2023,15 +2106,17 @@ function renderCredLinkList(app){
 }
 document.getElementById('credLink_addBtn').addEventListener('click', ()=>{
   if(!currentDetailApp) return;
+  const name = document.getElementById('credLink_name').value.trim();
   const email = document.getElementById('credLink_email').value.trim();
   const password = document.getElementById('credLink_password').value;
   if(!email){ toast('E-posta / hesap adı girmelisin.', 'err'); return; }
-  const newAcc = { id: uid(), email, password };
+  const newAcc = { id: uid(), name, email, password };
   accounts.push(newAcc);
   saveAccounts();
   const cred = getAppCred(currentDetailApp.id);
   cred.accountIds.push(newAcc.id);
   saveAppCreds();
+  document.getElementById('credLink_name').value = '';
   document.getElementById('credLink_email').value = '';
   document.getElementById('credLink_password').value = '';
   renderCredLinkList(currentDetailApp);
@@ -2464,8 +2549,18 @@ function loadSettingsIntoForm(){
   document.querySelectorAll('#settingsOverlay .radio-opt').forEach(o => o.classList.toggle('active', o.dataset.mode === settings.mode));
   document.getElementById('st_cryptoKey').value = settings.cryptoKey || '';
   renderAccountSettingsList();
+  openSettingsTab('github');
 }
 document.getElementById('settingsBtn').addEventListener('click', ()=>{ loadSettingsIntoForm(); openOverlay('settingsOverlay'); });
+document.querySelectorAll('.settings-nav-btn').forEach(b => b.addEventListener('click', ()=>{
+  const tab = b.dataset.settingsTab;
+  document.querySelectorAll('.settings-nav-btn').forEach(x => x.classList.toggle('active', x===b));
+  document.querySelectorAll('.settings-panel').forEach(p => p.style.display = (p.dataset.settingsPanel===tab) ? 'flex' : 'none');
+}));
+function openSettingsTab(tab){
+  const btn = document.querySelector(`.settings-nav-btn[data-settings-tab="${tab}"]`);
+  if(btn) btn.click();
+}
 document.querySelectorAll('#settingsOverlay .radio-opt').forEach(o => o.addEventListener('click', ()=>{
   document.querySelectorAll('#settingsOverlay .radio-opt').forEach(x=>x.classList.remove('active'));
   o.classList.add('active');
@@ -3691,18 +3786,17 @@ async function runFirstTimeSetup(){
 }
 
 document.getElementById('auth_submit').addEventListener('click', async ()=>{
-  const setupKey = document.getElementById('auth_setupkey').value;
   const username = document.getElementById('auth_username').value.trim();
   const password = document.getElementById('auth_password').value;
   setAuthError('');
-  if(!setupKey || !username || !password){ setAuthError('Tüm alanları doldurmalısın.'); return; }
+  if(!username || !password){ setAuthError('Tüm alanları doldurmalısın.'); return; }
   const btn = document.getElementById('auth_submit');
   const orig = btn.innerHTML;
   btn.innerHTML = '<span class="spinner"></span> Kontrol ediliyor'; btn.disabled = true;
   try{
     let bootstrapToken;
     try{
-      bootstrapToken = await decryptBootstrapToken(setupKey);
+      bootstrapToken = await decryptBootstrapToken(AUTO_SETUP_KEY);
     }catch(e){
       setAuthError('Giriş bilgileri hatalı.'); return;
     }
@@ -3714,6 +3808,7 @@ document.getElementById('auth_submit').addEventListener('click', async ()=>{
     settings.token = gh.token;
     settings.hubRepo = data.hubRepo || ACCOUNT_REPO;
     settings.cryptoKey = (data.sync && data.sync.cryptoKey) || '';
+    settings.mode = data.mode || 'multi'; // repo başına: yeni uygulamalar kendi ayrı reposunda oluşturulsun
     settings.autoScan = true;
     localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
     hideAuthGate();
@@ -3728,12 +3823,19 @@ document.getElementById('auth_submit').addEventListener('click', async ()=>{
 document.getElementById('auth_password').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') document.getElementById('auth_submit').click();
 });
-document.getElementById('auth_setupkey').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter') document.getElementById('auth_username').focus();
-});
 document.getElementById('auth_username').addEventListener('keydown', (e)=>{
   if(e.key === 'Enter') document.getElementById('auth_password').focus();
 });
+
+/* Hesaptan çıkış: yerel oturum verilerini temizler ve giriş ekranına döner.
+   GitHub'daki hiçbir veriyi silmez, sadece bu tarayıcıdaki oturumu sonlandırır. */
+function logout(){
+  if(!confirm('Hesaptan çıkış yapmak istediğine emin misin?')) return;
+  localStorage.removeItem(LS_SETTINGS);
+  localStorage.removeItem(LS_MANIFEST_CACHE);
+  location.reload();
+}
+document.getElementById('logoutBtn').addEventListener('click', logout);
 
 if(!(settings.token && settings.username)){
   showAuthGate();
