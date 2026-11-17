@@ -1953,6 +1953,7 @@ async function saveManifest(list){
   localStorage.setItem(LS_MANIFEST_CACHE, JSON.stringify(allApps));
 }
 async function patchApp(id, patchFn){
+  if(!canEditApp(id)) throw new Error('Bu uygulamada düzenleme iznin yok.');
   const list = await loadManifest();
   const idx = list.findIndex(a=>a.id===id);
   if(idx === -1) throw new Error('Uygulama bulunamadı.');
@@ -2652,6 +2653,7 @@ setupDropzone('na_icon_dropzone','na_icon_file', async files => {
 });
 
 document.getElementById('na_submit').addEventListener('click', async ()=>{
+  if(!canCreateApp()){ toast('Yeni uygulama oluşturma iznin yok.', 'err'); return; }
   const name = document.getElementById('na_name').value.trim();
   const description = document.getElementById('na_desc').value.trim();
   const category = document.getElementById('na_category').value.trim();
@@ -3323,6 +3325,7 @@ function renderDetailBase(app){
 
   document.getElementById('deleteAppBtn').addEventListener('click', async (e)=>{
     e.stopPropagation();
+    if(!canEditApp(app.id)){ toast('Bu uygulamada düzenleme iznin yok.', 'err'); return; }
     if(!confirm(`"${app.name}" silinsin mi? Bu işlem GitHub'daki dosyaları da etkiler.`)) return;
     try{
       if(app.mode === 'multi'){
@@ -3719,7 +3722,10 @@ function renderDashboard(){
   const seeAll = document.getElementById('dashSeeAllAct');
   if(seeAll) seeAll.addEventListener('click', (e)=>{ e.preventDefault(); showView('activity'); });
   const qNew = document.getElementById('dashQuickNew');
-  if(qNew) qNew.addEventListener('click', ()=> document.getElementById('newAppBtn').click());
+  if(qNew){
+    qNew.style.display = canCreateApp() ? '' : 'none';
+    qNew.addEventListener('click', ()=> document.getElementById('newAppBtn').click());
+  }
   const qRel = document.getElementById('dashQuickReleases');
   if(qRel) qRel.addEventListener('click', ()=> showView('releases'));
   const qAct = document.getElementById('dashQuickActivity');
@@ -3964,6 +3970,7 @@ function hideBoot(){ document.getElementById('bootScreen').style.display = 'none
    bulunmayan repoları otomatik olarak birer "keşfedilen uygulama" kaydı halinde
    manifeste ekler. Her keşfedilen uygulama kendi ayrı reposuyla (mode:'multi') kaydedilir. */
 async function autoDiscoverAppsFromRepos(onProgress){
+  if(!settings.isAdmin) return 0; // yalnızca yönetici manifesti otomatik genişletebilir
   const emit = onProgress || (()=>{});
   let repos = [];
   for(let page=1; page<=10; page++){
@@ -3973,7 +3980,7 @@ async function autoDiscoverAppsFromRepos(onProgress){
     repos = repos.concat(batch||[]);
     if(!batch || batch.length < 100) break;
   }
-  const known = new Set(apps.map(a=>a.repo));
+  const known = new Set(allApps.map(a=>a.repo));
   const candidates = repos.filter(r => r.name !== settings.hubRepo && !known.has(r.name));
   if(!candidates.length) return 0;
   let added = 0;
@@ -4140,13 +4147,13 @@ function permsFromUser(u){
 function appLevel(appId){
   if(settings.isAdmin) return 'edit';
   const p = settings.perms;
-  if(!p) return 'edit';
+  if(!p) return 'none'; // izin bilgisi yoksa güvenli taraf: erişim yok
   const l = p.apps && p.apps[appId];
   return ['none','view','edit'].includes(l) ? l : (p.defaultAccess || 'none');
 }
 function canViewApp(appId){ return appLevel(appId) !== 'none'; }
 function canEditApp(appId){ return appLevel(appId) === 'edit'; }
-function canCreateApp(){ return !!settings.isAdmin || !settings.perms || !!settings.perms.canCreate; }
+function canCreateApp(){ return !!settings.isAdmin || (!!settings.perms && !!settings.perms.canCreate); }
 function setApps(list){
   allApps = list || [];
   apps = allApps.filter(a => canViewApp(a.id));
@@ -4418,6 +4425,12 @@ document.querySelectorAll('[data-usr-all]').forEach(b => b.addEventListener('cli
   document.querySelectorAll('#usr_appList select').forEach(sel => sel.value = b.dataset.usrAll);
 }));
 
+if(settings.token && settings.username && !settings.loginUser){
+  // Yetki sistemi öncesi açılmış eski oturum: izin bilgisi yok, tekrar giriş şart
+  localStorage.removeItem(LS_SETTINGS); localStorage.removeItem(LS_MANIFEST_CACHE);
+  settings.token = ''; settings.username = ''; settings.isAdmin = false; settings.perms = null;
+  allApps = []; apps = [];
+}
 if(!(settings.token && settings.username)){
   showAuthGate();
 }else{
